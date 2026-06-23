@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 
 import { PolicyTestPanel } from '@/components/policy-builder/test-panel';
 import { RuleEditor } from '@/components/policy-builder/rule-editor';
@@ -80,11 +81,11 @@ export default function PolicyBuilderPage({ params }: { params: { id: string } }
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <Link href="/policies" className="text-sm text-primary hover:underline">
-          ← Back to policies
+        <Link href="/policies" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to policies
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{data.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{data.name}</h1>
           <Badge variant="secondary">{data.status}</Badge>
           <span className="text-sm text-muted-foreground">v{data.version}</span>
         </div>

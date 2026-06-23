@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { Building2, ListChecks, UserCheck, Users } from 'lucide-react';
+
 import { StatCard, StatCardSkeleton } from '@/components/dashboard/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,41 +56,41 @@ export default function AdminOverviewPage() {
           </>
         ) : (
           <>
-            <StatCard label="Tenants" value={stats.data?.tenant_count ?? 0} />
-            <StatCard label="Active tenants" value={stats.data?.active_tenant_count ?? 0} />
-            <StatCard label="Users" value={stats.data?.user_count ?? 0} />
-            <StatCard label="Claims" value={stats.data?.claim_count ?? 0} />
+            <StatCard label="Tenants" value={stats.data?.tenant_count ?? 0} icon={Building2} />
+            <StatCard label="Active tenants" value={stats.data?.active_tenant_count ?? 0} icon={UserCheck} accent="positive" />
+            <StatCard label="Users" value={stats.data?.user_count ?? 0} icon={Users} />
+            <StatCard label="Claims" value={stats.data?.claim_count ?? 0} icon={ListChecks} />
           </>
         )}
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Tenants</h2>
-        <div className="overflow-hidden rounded-xl border border-border">
+        <h2 className="text-lg font-semibold tracking-tight">Tenants</h2>
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
           <table className="min-w-full text-sm">
-            <thead className="bg-muted/40">
+            <thead className="bg-muted/50">
               <tr>
                 {['Name', 'Slug', 'Plan', 'Users', 'Claims', 'Status', ''].map((h) => (
-                  <th key={h} className="px-4 py-2 text-left font-medium text-muted-foreground">
+                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/60">
               {rows.map((t) => (
-                <tr key={t.id} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">{t.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.slug ?? '—'}</td>
-                  <td className="px-4 py-3">{t.plan_tier}</td>
-                  <td className="px-4 py-3">{t.user_count}</td>
-                  <td className="px-4 py-3">{t.claim_count}</td>
-                  <td className="px-4 py-3">
+                <tr key={t.id} className="transition-colors hover:bg-muted/30">
+                  <td className="px-5 py-3.5 font-medium">{t.name}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{t.slug ?? '—'}</td>
+                  <td className="px-5 py-3.5">{t.plan_tier}</td>
+                  <td className="px-5 py-3.5">{t.user_count}</td>
+                  <td className="px-5 py-3.5">{t.claim_count}</td>
+                  <td className="px-5 py-3.5">
                     <Badge variant={t.is_active ? 'default' : 'secondary'}>
                       {t.is_active ? 'active' : 'disabled'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-5 py-3.5 text-right">
                     <Button
                       variant="outline"
                       size="sm"
@@ -102,7 +104,7 @@ export default function AdminOverviewPage() {
               ))}
               {!tenants.isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
                     No tenants yet.
                   </td>
                 </tr>

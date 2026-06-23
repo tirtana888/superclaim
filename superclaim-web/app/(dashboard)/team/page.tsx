@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { KeyRound } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -59,7 +60,7 @@ export default function TeamPage() {
               <div className="space-y-2">
                 <Label>Role</Label>
                 <select
-                  className="w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm"
+                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm shadow-xs-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   value={role}
                   onChange={(e) => setRole(e.target.value as 'admin' | 'reviewer')}
                 >
@@ -74,29 +75,40 @@ export default function TeamPage() {
       </div>
 
       {inviteResult && (
-        <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
-          <p className="font-medium">Temporary password (share securely with {inviteResult.email})</p>
-          <p className="mt-2 font-mono">{inviteResult.temporary_password}</p>
-          <Button className="mt-3" size="sm" variant="outline" onClick={() => setInviteResult(null)}>Dismiss</Button>
+        <div className="overflow-hidden rounded-xl border border-primary/20 bg-primary/5 shadow-sm">
+          <div className="flex items-start gap-3 p-4">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <KeyRound className="h-4.5 w-4.5" />
+            </div>
+            <div className="flex-1 space-y-2.5">
+              <p className="font-medium text-foreground">
+                Temporary password — share securely with {inviteResult.email}
+              </p>
+              <p className="break-all rounded-lg bg-background/60 p-3 font-mono text-xs text-foreground">
+                {inviteResult.temporary_password}
+              </p>
+              <Button size="sm" variant="outline" onClick={() => setInviteResult(null)}>Dismiss</Button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <table className="min-w-full text-sm">
-          <thead className="bg-muted/40">
+          <thead className="bg-muted/50">
             <tr>
               {['Email', 'Role', 'Status'].map((h) => (
-                <th key={h} className="px-4 py-2 text-left font-medium text-muted-foreground">{h}</th>
+                <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {isLoading && <tr><td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>}
+          <tbody className="divide-y divide-border/60">
+            {isLoading && <tr><td colSpan={3} className="px-5 py-10 text-center text-muted-foreground">Loading…</td></tr>}
             {rows.map((m) => (
-              <tr key={m.id} className="border-t border-border">
-                <td className="px-4 py-3">{m.email}</td>
-                <td className="px-4 py-3">{m.role}</td>
-                <td className="px-4 py-3">{m.status}</td>
+              <tr key={m.id} className="transition-colors hover:bg-muted/30">
+                <td className="px-5 py-3.5">{m.email}</td>
+                <td className="px-5 py-3.5">{m.role}</td>
+                <td className="px-5 py-3.5">{m.status}</td>
               </tr>
             ))}
           </tbody>

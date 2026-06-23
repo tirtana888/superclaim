@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CircleDollarSign, FileSearch, ListChecks, ShieldCheck } from 'lucide-react';
 
 import { StatCard, StatCardSkeleton } from '@/components/dashboard/stat-card';
 import { Badge } from '@/components/ui/badge';
@@ -33,13 +34,14 @@ export default function OverviewPage() {
           </>
         ) : (
           <>
-            <StatCard label="Total claims" value={rows.length} />
-            <StatCard label="Approved" value={approved} />
-            <StatCard label="Needs review" value={review} />
+            <StatCard label="Total claims" value={rows.length} icon={ListChecks} />
+            <StatCard label="Approved" value={approved} icon={ShieldCheck} accent="positive" />
+            <StatCard label="Needs review" value={review} icon={FileSearch} />
             <StatCard
               label="AI cost (period)"
               value={`$${(usage.data?.ai_cost_total ?? 0).toFixed(2)}`}
               hint={usage.data?.period}
+              icon={CircleDollarSign}
             />
           </>
         )}
@@ -47,49 +49,49 @@ export default function OverviewPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">Recent claims</h2>
-          <Link href="/claims" className="text-sm text-primary hover:underline">
+          <h2 className="text-lg font-semibold tracking-tight">Recent claims</h2>
+          <Link href="/claims" className="text-sm font-medium text-primary hover:underline">
             View all
           </Link>
         </div>
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
           <table className="min-w-full text-sm">
-            <thead className="bg-muted/40">
+            <thead className="bg-muted/50">
               <tr>
                 {['Claim ID', 'Status', 'Decision', 'Fraud', 'Created'].map((h) => (
-                  <th key={h} className="px-4 py-2 text-left font-medium text-muted-foreground">
+                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/60">
               {rows.slice(0, 5).map((row) => {
                 const analysis = row.metadata?.analysis_result as { decision?: string; fraud_score?: number } | undefined;
                 return (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-4 py-3">
-                    <Link href={`/claims/${row.external_claim_id}`} className="text-primary hover:underline">
+                <tr key={row.id} className="transition-colors hover:bg-muted/30">
+                  <td className="px-5 py-3.5">
+                    <Link href={`/claims/${row.external_claim_id}`} className="font-medium text-primary hover:underline">
                       {row.external_claim_id}
                     </Link>
                   </td>
-                  <td className="px-4 py-3">{row.status}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5 capitalize text-foreground">{row.status}</td>
+                  <td className="px-5 py-3.5">
                     {analysis?.decision ? (
                       <Badge variant={analysis.decision === 'APPROVE' ? 'default' : analysis.decision === 'REJECT' ? 'destructive' : 'secondary'}>
                         {analysis.decision}
                       </Badge>
                     ) : (
-                      '—'
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">{analysis?.fraud_score?.toFixed(2) ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{row.created_at?.slice(0, 10) ?? '—'}</td>
+                  <td className="px-5 py-3.5 text-foreground">{analysis?.fraud_score?.toFixed(2) ?? '—'}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{row.created_at?.slice(0, 10) ?? '—'}</td>
                 </tr>
               );})}
               {!claims.isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
                     No claims yet. Submit one from your integration or hosted claim page.
                   </td>
                 </tr>
