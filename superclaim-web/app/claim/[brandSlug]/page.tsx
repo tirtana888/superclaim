@@ -14,7 +14,7 @@ export default function HostedClaimPage({ params }: { params: { brandSlug: strin
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
-  const [claimId, setClaimId] = useState(`CLM-${Date.now()}`);
+  const [claimId] = useState(`CLM-${Date.now()}`);
   const [serial, setSerial] = useState('');
   const [category, setCategory] = useState('smartphone');
   const [purchaseDate, setPurchaseDate] = useState('');

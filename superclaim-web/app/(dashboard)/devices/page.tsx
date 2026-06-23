@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bffRequest } from '@/lib/api';
-import type { Device, DeviceListResponse } from '@/lib/types';
+import type { DeviceListResponse } from '@/lib/types';
 
 export default function DevicesPage() {
   const qc = useQueryClient();
