@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { fetchClaimsFromEngine } from '@/lib/engine';
 import { getSupabaseAdmin, getTenantId } from '@/lib/supabase-server';
 import type { ClaimRow, DashboardStats } from '@/lib/types';
 
@@ -45,29 +46,37 @@ function computeStats(claims: ClaimRow[]): DashboardStats {
   };
 }
 
+async function loadClaimsFromSupabase(): Promise<ClaimRow[]> {
+  const supabase = getSupabaseAdmin();
+  const tenantId = getTenantId();
+
+  const { data, error } = await supabase
+    .from('claims')
+    .select(
+      'id, external_claim_id, status, device_category, serial_number_input, created_at, metadata',
+    )
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as ClaimRow[];
+}
+
 export async function GET() {
   try {
-    const supabase = getSupabaseAdmin();
-    const tenantId = getTenantId();
+    const engine = await fetchClaimsFromEngine();
+    const claims =
+      engine.status === 'ok' ? engine.claims : await loadClaimsFromSupabase();
 
-    const { data, error } = await supabase
-      .from('claims')
-      .select(
-        'id, external_claim_id, status, device_category, serial_number_input, created_at, metadata',
-      )
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    const claims = (data ?? []) as ClaimRow[];
     return NextResponse.json(
       {
         claims,
         stats: computeStats(claims),
+        source: engine.status === 'ok' ? 'engine' : 'supabase',
       },
       { headers: { 'Cache-Control': 'no-store' } },
     );

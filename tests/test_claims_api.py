@@ -115,3 +115,48 @@ def test_analyze_claim_success(
     assert body["status"] == "processing"
     assert body["image_count"] == 1
     mock_task.delay.assert_called_once()
+
+
+def test_list_claims_success(client: TestClient, tenant_id: str) -> None:
+    from app.models.claim import Claim
+    from app.models.tenant import Tenant
+
+    tenant = Tenant(id=uuid4(), name="Test Tenant", api_key_hash=hash_api_key("secret-key"))
+    tenant_ctx = TenantContext(tenant_id=tenant.id, tenant=tenant)
+    claim = Claim(
+        id=uuid4(),
+        tenant_id=tenant.id,
+        external_claim_id="CLM-100",
+        status="rejected",
+        device_category="smartphone",
+        serial_number_input="SN1",
+        metadata_={"analysis_result": {"decision": "REJECT"}},
+        created_at=datetime.now(UTC),
+    )
+
+    session = AsyncMock()
+    session.execute = AsyncMock(return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [claim])))
+    auth_ctx = AuthenticatedContext(tenant=tenant_ctx, db=session)
+
+    async def override_auth() -> AuthenticatedContext:
+        return auth_ctx
+
+    from app.security import get_authenticated_context
+
+    app.dependency_overrides[get_authenticated_context] = override_auth
+
+    response = client.get(
+        "/v1/claims",
+        headers={
+            "X-API-Key": "secret-key",
+            "X-Tenant-ID": str(tenant.id),
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["claims"]) == 1
+    assert body["claims"][0]["external_claim_id"] == "CLM-100"
+    assert body["claims"][0]["metadata"]["analysis_result"]["decision"] == "REJECT"

@@ -153,3 +153,35 @@ export function mergeEngineAnalysis(
     },
   };
 }
+
+export async function fetchClaimsFromEngine(limit = 100) {
+  if (!API_KEY || !TENANT_ID) {
+    return { status: 'error' as const, message: 'Engine credentials not configured' };
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${ENGINE_URL}/v1/claims?limit=${limit}`, {
+      headers: {
+        'X-API-Key': API_KEY,
+        'X-Tenant-ID': TENANT_ID,
+      },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Network error';
+    return { status: 'error' as const, message: msg };
+  }
+
+  const { body, raw } = await parseEngineResponse(res);
+  if (!res.ok) {
+    return {
+      status: 'error' as const,
+      message: extractErrorMessage(body, raw, res.status),
+    };
+  }
+
+  const record = body as { claims?: ClaimRow[] };
+  return { status: 'ok' as const, claims: record.claims ?? [] };
+}

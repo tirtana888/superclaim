@@ -39,6 +39,20 @@ class ClaimAnalyzeResponse(BaseModel):
     submitted_at: datetime
 
 
+class ClaimSummary(BaseModel):
+    id: UUID
+    external_claim_id: str
+    status: str
+    device_category: str | None = None
+    serial_number_input: str | None = None
+    created_at: datetime
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ClaimListResponse(BaseModel):
+    claims: list[ClaimSummary]
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

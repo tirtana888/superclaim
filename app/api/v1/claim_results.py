@@ -1,14 +1,40 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
 from app.models.claim import Claim
-from app.schemas.claim import ErrorResponse
+from app.schemas.claim import ClaimListResponse, ClaimSummary, ErrorResponse
 from app.schemas.decision import ClaimDecisionResult
 from app.security import AuthenticatedContext, get_authenticated_context
 
 router = APIRouter(prefix="/v1/claims", tags=["claims"])
+
+
+@router.get("", response_model=ClaimListResponse)
+async def list_claims(
+    auth: AuthenticatedContext = Depends(get_authenticated_context),
+    limit: int = Query(default=100, ge=1, le=200),
+) -> ClaimListResponse:
+    result = await auth.db.execute(
+        select(Claim)
+        .where(Claim.tenant_id == auth.tenant.tenant_id)
+        .order_by(Claim.created_at.desc())
+        .limit(limit)
+    )
+    claims = result.scalars().all()
+    return ClaimListResponse(
+        claims=[
+            ClaimSummary(
+                id=claim.id,
+                external_claim_id=claim.external_claim_id,
+                status=claim.status,
+                device_category=claim.device_category,
+                serial_number_input=claim.serial_number_input,
+                created_at=claim.created_at,
+                metadata=claim.metadata_,
+            )
+            for claim in claims
+        ]
+    )
 
 
 @router.get(
