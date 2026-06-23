@@ -72,10 +72,16 @@ export function ClaimSubmitForm() {
     }
   }
 
+const MAX_FILE_MB = 4;
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!file) {
       setError('Upload foto kerusakan dulu');
+      return;
+    }
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setError(`Foto terlalu besar — maksimal ${MAX_FILE_MB}MB`);
       return;
     }
 

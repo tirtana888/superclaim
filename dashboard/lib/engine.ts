@@ -63,19 +63,26 @@ export async function submitClaimToEngine(payload: SubmitClaimPayload) {
     throw new Error('SUPERCLAIM_API_KEY or SUPERCLAIM_TENANT_ID not configured');
   }
 
-  const res = await fetch(`${ENGINE_URL}/v1/claims/analyze`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': API_KEY,
-      'X-Tenant-ID': TENANT_ID,
-    },
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${ENGINE_URL}/v1/claims/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY,
+        'X-Tenant-ID': TENANT_ID,
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(120_000),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Network error';
+    throw new Error(`Tidak bisa hubungi engine API (${ENGINE_URL}): ${msg}`);
+  }
 
   const { body, raw } = await parseEngineResponse(res);
   if (!res.ok) {
-    throw new Error(extractErrorMessage(body, raw, res.status));
+    throw new Error(`[${res.status}] ${extractErrorMessage(body, raw, res.status)}`);
   }
   return body;
 }

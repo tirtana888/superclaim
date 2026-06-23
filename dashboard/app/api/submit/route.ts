@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { checkEngineHealth, getEngineUrl, submitClaimToEngine } from '@/lib/engine';
 import type { SubmitClaimPayload } from '@/lib/engine';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET() {
   const online = await checkEngineHealth();
   return NextResponse.json({ online, url: getEngineUrl() });
@@ -25,9 +28,8 @@ export async function POST(request: Request) {
     const result = await submitClaimToEngine(payload);
     return NextResponse.json(result, { status: 202 });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Submit failed' },
-      { status: 502 },
-    );
+    const message = err instanceof Error ? err.message : 'Submit failed';
+    console.error('[api/submit]', message);
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }
