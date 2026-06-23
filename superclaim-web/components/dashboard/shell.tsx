@@ -54,14 +54,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-muted/30">
-      <div className="hidden border-r border-border/60 md:block">
+      <div className="sticky top-0 hidden h-screen shrink-0 border-r border-border/60 md:block">
         <DashboardSidebar />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-2 border-b border-border/60 bg-card px-4 py-2 md:hidden">
           <Sheet>
-            <SheetTrigger render={<Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>} />
-            <SheetContent side="left" className="w-64 p-0">
+            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button>} />
+            <SheetContent side="left" className="w-72 p-0">
               <DashboardSidebar onNavigate={() => {}} />
             </SheetContent>
           </Sheet>
