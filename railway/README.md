@@ -7,7 +7,8 @@
 | Redis | (plugin) | — | — | No |
 | Dashboard | `dashboard/` root | Nixpacks | `/` | Yes |
 
-📖 Worker setup: [`docs/RAILWAY-WORKER-TUTORIAL.md`](../docs/RAILWAY-WORKER-TUTORIAL.md)
+📖 Dashboard: [`docs/RAILWAY-DASHBOARD-TUTORIAL.md`](../docs/RAILWAY-DASHBOARD-TUTORIAL.md)
+📖 Worker: [`docs/RAILWAY-WORKER-TUTORIAL.md`](../docs/RAILWAY-WORKER-TUTORIAL.md)
 
 Entrypoint `scripts/docker-entrypoint.sh` starts Celery when `RAILWAY_SERVICE_NAME` contains `worker`, otherwise uvicorn on `$PORT`.
 

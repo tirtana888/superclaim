@@ -142,7 +142,9 @@ Harus: `{"status":"ok","celery":"ok"}`
 
 ## 5. Deploy Dashboard (trial UI)
 
-### Opsi A — Railway (satu project)
+📖 **Tutorial lengkap:** [`docs/RAILWAY-DASHBOARD-TUTORIAL.md`](docs/RAILWAY-DASHBOARD-TUTORIAL.md)
+
+Ringkas:
 
 1. **+ New** → **GitHub Repo** → repo yang sama
 2. **Root Directory**: `dashboard`
