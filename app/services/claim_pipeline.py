@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import logging
 import time
 from uuid import UUID
@@ -14,7 +15,7 @@ from app.services.duplicate_service import analyze_duplicates_and_exif
 from app.services.fraud_service import score_fraud
 from app.services.ocr_service import extract_serial_from_image
 from app.services.policy_engine import evaluate_policy
-from app.services.storage_service import create_signed_url, download_claim_image
+from app.services.storage_service import download_claim_image
 from app.services.vision_service import analyze_claim_image
 
 logger = logging.getLogger(__name__)
@@ -60,8 +61,13 @@ async def run_claim_analysis(claim_id: str) -> ClaimDecisionResult:
         await db.commit()
 
         images = await _download_claim_images(claim)
-        primary_path = images[0][1]
-        signed_url = await create_signed_url(primary_path)
+        primary_bytes, primary_path = images[0]
+        images_meta = claim.metadata_.get("images", [])
+        primary_content_type = "image/jpeg"
+        for image in images_meta:
+            if image.get("path") == primary_path:
+                primary_content_type = image.get("content_type", "image/jpeg")
+                break
 
         duplicate_result = await analyze_duplicates_and_exif(
             db,
@@ -76,13 +82,18 @@ async def run_claim_analysis(claim_id: str) -> ClaimDecisionResult:
         device_category = claim.device_category or "unknown"
 
         try:
-            vision_result = await analyze_claim_image(signed_url, device_category)
+            vision_result = await analyze_claim_image(
+                device_category,
+                image_bytes=primary_bytes,
+                content_type=primary_content_type,
+            )
         except Exception as exc:
             logger.warning("Vision analysis failed for claim %s: %s", claim_id, exc)
 
         try:
             ocr_result = await extract_serial_from_image(
-                image_url=signed_url,
+                content_base64=base64.b64encode(primary_bytes).decode(),
+                content_type=primary_content_type,
                 serial_number_input=claim.serial_number_input,
             )
         except Exception as exc:

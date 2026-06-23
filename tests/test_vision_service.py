@@ -22,6 +22,23 @@ def mock_gemini_response() -> MagicMock:
 
 
 @pytest.mark.asyncio
+async def test_analyze_claim_image_with_bytes(mock_gemini_response: MagicMock) -> None:
+    with patch("app.services.vision_service._get_client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.models.generate_content.return_value = mock_gemini_response
+        mock_client_factory.return_value = mock_client
+
+        result = await analyze_claim_image(
+            "smartphone",
+            image_bytes=b"fake-image-bytes",
+            content_type="image/jpeg",
+        )
+
+    assert result.damage_type == "cracked_screen"
+    mock_client.models.generate_content.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_analyze_claim_image_success(mock_gemini_response: MagicMock) -> None:
     fake_image = b"fake-image-bytes"
 
@@ -35,8 +52,8 @@ async def test_analyze_claim_image_success(mock_gemini_response: MagicMock) -> N
         mock_client_factory.return_value = mock_client
 
         result = await analyze_claim_image(
+            "smartphone",
             image_url="https://example.com/signed.jpg",
-            device_category="smartphone",
         )
 
     assert result.damage_type == "cracked_screen"
@@ -67,8 +84,8 @@ async def test_analyze_claim_image_retries_on_failure(mock_gemini_response: Magi
         mock_client_factory.return_value = mock_client
 
         result = await analyze_claim_image(
+            "smartphone",
             image_url="https://example.com/signed.jpg",
-            device_category="smartphone",
         )
 
     assert result.damage_type == "cracked_screen"
@@ -91,6 +108,6 @@ async def test_analyze_claim_image_raises_after_retries() -> None:
 
         with pytest.raises(RuntimeError, match="failed after 3 attempts"):
             await analyze_claim_image(
+                "smartphone",
                 image_url="https://example.com/signed.jpg",
-                device_category="smartphone",
             )

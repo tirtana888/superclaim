@@ -110,18 +110,28 @@ def _call_gemini(
 
 
 async def analyze_claim_image(
-    image_url: str,
     device_category: str,
+    *,
+    image_url: str | None = None,
+    image_bytes: bytes | None = None,
+    content_type: str = "image/jpeg",
 ) -> VisionAnalysisResult:
-    """Analyze a claim image using Gemini vision (signed URL input)."""
-    image_bytes, mime_type = await _fetch_image(image_url)
+    """Analyze a claim image using Gemini vision."""
+    if image_bytes is not None:
+        mime_type = content_type.split(";")[0] or "image/jpeg"
+        payload = image_bytes
+    elif image_url:
+        payload, mime_type = await _fetch_image(image_url)
+    else:
+        raise ValueError("Either image_url or image_bytes is required")
+
     last_error: Exception | None = None
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             parsed, cost, raw = await asyncio.to_thread(
                 _call_gemini,
-                image_bytes,
+                payload,
                 mime_type,
                 device_category,
             )

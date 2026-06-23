@@ -98,3 +98,61 @@ export async function checkEngineHealth() {
     return false;
   }
 }
+
+const DECISION_STATUS: Record<string, string> = {
+  APPROVE: 'approved',
+  REJECT: 'rejected',
+  REVIEW: 'review',
+};
+
+export async function fetchClaimResultFromEngine(claimId: string) {
+  if (!API_KEY || !TENANT_ID) {
+    return { status: 'error' as const, message: 'Engine credentials not configured' };
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${ENGINE_URL}/v1/claims/${encodeURIComponent(claimId)}`, {
+      headers: {
+        'X-API-Key': API_KEY,
+        'X-Tenant-ID': TENANT_ID,
+      },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Network error';
+    return { status: 'error' as const, message: msg };
+  }
+
+  const { body, raw } = await parseEngineResponse(res);
+  if (res.status === 409) {
+    return { status: 'processing' as const };
+  }
+  if (!res.ok) {
+    return {
+      status: 'error' as const,
+      message: extractErrorMessage(body, raw, res.status),
+    };
+  }
+  return { status: 'done' as const, analysis: body as Record<string, unknown> };
+}
+
+export function mergeEngineAnalysis(
+  claim: Record<string, unknown>,
+  analysis: Record<string, unknown>,
+): Record<string, unknown> {
+  const decision = String(analysis.decision ?? '');
+  const metadata =
+    claim.metadata && typeof claim.metadata === 'object'
+      ? { ...(claim.metadata as Record<string, unknown>) }
+      : {};
+
+  metadata.analysis_result = analysis;
+
+  return {
+    ...claim,
+    status: DECISION_STATUS[decision] ?? claim.status,
+    metadata,
+  };
+}

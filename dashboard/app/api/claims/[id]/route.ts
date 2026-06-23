@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { fetchClaimResultFromEngine, mergeEngineAnalysis } from '@/lib/engine';
 import { getSupabaseAdmin, getTenantId } from '@/lib/supabase-server';
 import type { ClaimRow } from '@/lib/types';
 
@@ -28,8 +29,22 @@ export async function GET(
       return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
     }
 
+    let claim = data as ClaimRow;
+    const needsEngine =
+      claim.status === 'processing' || !claim.metadata?.analysis_result;
+
+    if (needsEngine) {
+      const engine = await fetchClaimResultFromEngine(params.id);
+      if (engine.status === 'done') {
+        claim = mergeEngineAnalysis(
+          claim as unknown as Record<string, unknown>,
+          engine.analysis,
+        ) as ClaimRow;
+      }
+    }
+
     return NextResponse.json(
-      { claim: data as ClaimRow },
+      { claim },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (err) {
