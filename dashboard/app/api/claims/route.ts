@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, getTenantId } from '@/lib/supabase-server';
 import type { ClaimRow, DashboardStats } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 function startOfTodayIso() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -61,10 +64,13 @@ export async function GET() {
     }
 
     const claims = (data ?? []) as ClaimRow[];
-    return NextResponse.json({
-      claims,
-      stats: computeStats(claims),
-    });
+    return NextResponse.json(
+      {
+        claims,
+        stats: computeStats(claims),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Unknown error' },

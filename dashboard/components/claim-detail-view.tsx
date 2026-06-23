@@ -61,7 +61,14 @@ export function ClaimDetailView({ claim }: ClaimDetailViewProps) {
 
       {!analysis ? (
         <div className="card text-[hsl(var(--muted-foreground))]">
-          Claim is still processing. This page auto-refreshes every 3 seconds.
+          {claim.status === 'processing' ? (
+            <>Claim is still processing. This page auto-refreshes every 3 seconds.</>
+          ) : (
+            <>
+              Processing finished (status: <strong>{claim.status}</strong>) but analysis
+              details are not available yet. Try refreshing the page.
+            </>
+          )}
         </div>
       ) : (
         <>

@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, getTenantId } from '@/lib/supabase-server';
 import type { ClaimRow } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } },
@@ -25,7 +28,10 @@ export async function GET(
       return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ claim: data as ClaimRow });
+    return NextResponse.json(
+      { claim: data as ClaimRow },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Unknown error' },
