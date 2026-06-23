@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 
-import { checkEngineHealth, submitClaimToEngine } from '@/lib/engine';
+import { checkEngineHealth, getEngineUrl, submitClaimToEngine } from '@/lib/engine';
 import type { SubmitClaimPayload } from '@/lib/engine';
 
 export async function GET() {
   const online = await checkEngineHealth();
-  return NextResponse.json({ online, url: process.env.SUPERCLAIM_API_URL });
+  return NextResponse.json({ online, url: getEngineUrl() });
 }
 
 export async function POST(request: Request) {

@@ -135,8 +135,8 @@ SUPERCLAIM_API_KEY=sc_globalbeli_dev_2026
 SUPERCLAIM_TENANT_ID=e1b52fb2-2fb0-4c4d-b9b3-e46e4edec9d6`}
               </pre>
               <p className="text-xs text-amber-200/80">
-                Ganti URL dengan domain API Railway Anda (tanpa slash di akhir), lalu{' '}
-                <strong>Redeploy</strong> dashboard.
+                URL harus pakai <code className="text-amber-50">https://</code> di depan.
+                Ganti dengan domain API Railway Anda, lalu <strong>Redeploy</strong> dashboard.
               </p>
             </>
           ) : (
