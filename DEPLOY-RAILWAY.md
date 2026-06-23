@@ -2,6 +2,19 @@
 
 Lokal di Windows sulit karena butuh Redis (Memurai). Di Railway, Redis + API + Celery worker jalan di cloud — laptop cukup buka dashboard trial.
 
+## Auto-deploy setelah merge PR
+
+1. Hubungkan repo GitHub `tirtana888/superclaim` ke project Railway `steadfast-nature`
+2. Set **branch deploy** = `master` (Settings → Source → Branch)
+3. Setiap **merge PR ke `master`** → Railway rebuild & redeploy otomatis
+
+**Service config (wajib per service):**
+
+| Service | Config file | Dockerfile | Healthcheck |
+|---------|-------------|------------|-------------|
+| `superclaim-api` | `railway.toml` | `Dockerfile` | `/health` ON |
+| `superclaim-worker` | `railway.worker.toml` | `Dockerfile.worker` | OFF |
+
 ## Arsitektur
 
 ```
