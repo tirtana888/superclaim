@@ -57,14 +57,12 @@ Jangan commit file `.env` (sudah di `.gitignore`).
 
 1. **+ New** → **GitHub Repo** → repo yang sama lagi
 2. Nama: `superclaim-worker`
-3. **Settings → Build**: Dockerfile path = `Dockerfile` (sama dengan API)
-4. **Settings → Deploy → Custom Start Command**:
+3. **Settings → Config file path**: `railway.worker.toml` ← **wajib**
+4. **Settings → Build**: Dockerfile path = `Dockerfile.worker` (otomatis dari config)
+5. **Settings → Deploy → Healthcheck**: **OFF** / kosongkan path (worker tidak punya HTTP)
+6. **Jangan** generate public domain untuk worker (internal saja).
 
-```bash
-celery -A app.celery_app.celery_app worker --loglevel=info --concurrency=2
-```
-
-5. **Jangan** generate public domain untuk worker (internal saja).
+> **Penting:** Jangan pakai `railway.toml` (API) di worker. Itu memicu healthcheck ke `/health` padahal Celery tidak expose HTTP → error `1/1 replicas never became healthy`.
 
 ---
 
@@ -186,6 +184,7 @@ Total awal: **~$15–20/bulan** untuk staging trial.
 
 | Masalah | Solusi |
 |---------|--------|
+| Worker: `Healthcheck failed` / `/health` unavailable | Pakai `railway.worker.toml` + matikan healthcheck di service worker |
 | `/health/celery` 503 | Worker belum jalan atau `REDIS_URL` salah |
 | Klaim stuck `processing` | Cek log worker di Railway |
 | DB connection error | Pastikan `SUPABASE_DB_URL` pakai `postgresql+asyncpg://` dan password URL-encoded |
