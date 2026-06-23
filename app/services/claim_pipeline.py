@@ -10,12 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session_factory
 from app.models.claim import Claim
 from app.schemas.decision import ClaimDecisionResult
-from app.services.decision_service import build_decision
+from app.services.decision_service import decide
 from app.services.duplicate_service import analyze_duplicates_and_exif
 from app.services.fraud_service import score_fraud
 from app.services.ocr_service import extract_serial_from_image
 from app.services.policy_engine import evaluate_policy
+from app.services.result_adapters import analysis_to_storage_dict
 from app.services.storage_service import download_claim_image
+from app.services.usage_service import record_claim_processed
 from app.services.vision_service import analyze_claim_image
 
 logger = logging.getLogger(__name__)
@@ -128,7 +130,7 @@ async def run_claim_analysis(claim_id: str) -> ClaimDecisionResult:
         )
 
         elapsed_ms = int((time.perf_counter() - started) * 1000)
-        decision = build_decision(
+        analysis = decide(
             external_claim_id=claim.external_claim_id,
             policy_result=policy_result,
             duplicate_result=duplicate_result,
@@ -137,14 +139,22 @@ async def run_claim_analysis(claim_id: str) -> ClaimDecisionResult:
             ocr_result=ocr_result,
             processing_time_ms=elapsed_ms,
         )
+        storage = analysis_to_storage_dict(analysis)
 
         metadata = dict(claim.metadata_)
-        metadata["analysis_result"] = decision.model_dump()
+        metadata["analysis_result"] = storage
         claim.metadata_ = metadata
-        claim.status = DECISION_STATUS_MAP[decision.decision]
+        claim.result_json = storage
+        claim.decision = analysis.decision
+        claim.confidence_score = analysis.confidence_score
+        claim.fraud_score = analysis.fraud_score
+        claim.requires_review = analysis.requires_human_review
+        claim.ai_cost_usd = analysis.ai_cost_usd
+        claim.status = DECISION_STATUS_MAP[analysis.decision]
+        await record_claim_processed(db, tenant_id=claim.tenant_id, ai_cost_usd=analysis.ai_cost_usd)
         await db.commit()
 
-        return decision
+        return ClaimDecisionResult.model_validate(storage)
 
 
 def run_claim_analysis_sync(claim_id: str) -> dict:

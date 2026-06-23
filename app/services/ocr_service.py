@@ -212,3 +212,28 @@ async def extract_serial_from_image(
                 await asyncio.sleep(RETRY_DELAY_SECONDS * attempt)
 
     raise RuntimeError(f"Mistral OCR failed after {MAX_RETRIES} attempts") from last_error
+
+
+async def extract(
+    image_url: str,
+    *,
+    content_base64: str | None = None,
+    content_type: str = "image/jpeg",
+    serial_number_input: str | None = None,
+) -> "OCRResult":
+    """Canonical entrypoint — wraps extract_serial_from_image()."""
+    from app.schemas.results import OCRResult
+    from app.services.result_adapters import to_ocr_result
+
+    if content_base64:
+        legacy = await extract_serial_from_image(
+            content_base64=content_base64,
+            content_type=content_type,
+            serial_number_input=serial_number_input,
+        )
+    else:
+        legacy = await extract_serial_from_image(
+            image_url=image_url,
+            serial_number_input=serial_number_input,
+        )
+    return to_ocr_result(legacy)

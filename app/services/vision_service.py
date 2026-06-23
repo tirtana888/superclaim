@@ -161,3 +161,23 @@ async def analyze_claim_image(
                 await asyncio.sleep(RETRY_DELAY_SECONDS * attempt)
 
     raise RuntimeError(f"Gemini vision failed after {MAX_RETRIES} attempts") from last_error
+
+
+async def analyze(
+    image_url: str,
+    device_category: str,
+    *,
+    image_bytes: bytes | None = None,
+    content_type: str = "image/jpeg",
+) -> "VisionResult":
+    """Canonical entrypoint — wraps analyze_claim_image()."""
+    from app.schemas.results import VisionResult
+    from app.services.result_adapters import to_vision_result
+
+    if image_bytes is not None:
+        legacy = await analyze_claim_image(
+            device_category, image_bytes=image_bytes, content_type=content_type
+        )
+    else:
+        legacy = await analyze_claim_image(device_category, image_url=image_url)
+    return to_vision_result(legacy)

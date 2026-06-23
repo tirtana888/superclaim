@@ -51,7 +51,7 @@ def sample_payload(tenant_id: str) -> dict:
 
 def test_analyze_claim_requires_auth(client: TestClient, sample_payload: dict) -> None:
     response = client.post("/v1/claims/analyze", json=sample_payload)
-    assert response.status_code == 422
+    assert response.status_code == 401
 
 
 def test_analyze_claim_success(

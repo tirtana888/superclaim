@@ -265,3 +265,37 @@ async def score_fraud(
         model_source=model_source,
         features=features.as_dict(),
     )
+
+
+async def score(
+    db: AsyncSession,
+    *,
+    tenant_id: UUID,
+    claim_id: UUID,
+    purchase_date: date | None = None,
+    claim_date: date | None = None,
+    damage_description: str | None = None,
+    serial_number: str | None = None,
+    metadata: dict | None = None,
+    duplicate_result: DuplicateAnalysisResult | None = None,
+    vision_result: VisionAnalysisResult | None = None,
+    ocr_result: OcrAnalysisResult | None = None,
+) -> "FraudResult":
+    """Canonical entrypoint — wraps score_fraud()."""
+    from app.schemas.results import FraudResult
+    from app.services.result_adapters import to_fraud_result
+
+    legacy = await score_fraud(
+        db,
+        tenant_id=tenant_id,
+        claim_id=claim_id,
+        purchase_date=purchase_date,
+        claim_date=claim_date,
+        damage_description=damage_description,
+        serial_number=serial_number,
+        metadata=metadata,
+        duplicate_result=duplicate_result,
+        vision_result=vision_result,
+        ocr_result=ocr_result,
+    )
+    return to_fraud_result(legacy)

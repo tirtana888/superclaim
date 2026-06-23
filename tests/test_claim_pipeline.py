@@ -28,6 +28,7 @@ async def test_run_claim_analysis_persists_decision() -> None:
         processing_time_ms=100,
         ai_cost_usd=0.02,
     )
+    storage = decision.model_dump()
 
     session = AsyncMock()
     session.execute = AsyncMock(
@@ -38,6 +39,13 @@ async def test_run_claim_analysis_persists_decision() -> None:
     session_factory = MagicMock()
     session_factory.return_value.__aenter__ = AsyncMock(return_value=session)
     session_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    analysis_mock = MagicMock()
+    analysis_mock.decision = "APPROVE"
+    analysis_mock.confidence_score = 0.91
+    analysis_mock.fraud_score = 0.1
+    analysis_mock.requires_human_review = False
+    analysis_mock.ai_cost_usd = 0.02
 
     with patch("app.services.claim_pipeline.get_session_factory", return_value=session_factory), patch(
         "app.services.claim_pipeline._download_claim_images",
@@ -59,8 +67,14 @@ async def test_run_claim_analysis_persists_decision() -> None:
         "app.services.claim_pipeline.score_fraud",
         new_callable=AsyncMock,
     ), patch(
-        "app.services.claim_pipeline.build_decision",
-        return_value=decision,
+        "app.services.claim_pipeline.decide",
+        return_value=analysis_mock,
+    ), patch(
+        "app.services.claim_pipeline.analysis_to_storage_dict",
+        return_value=storage,
+    ), patch(
+        "app.services.claim_pipeline.record_claim_processed",
+        new_callable=AsyncMock,
     ):
         from app.schemas.duplicate import DuplicateAnalysisResult
 

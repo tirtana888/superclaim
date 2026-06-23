@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { fetchClaimsWithJwt } from '@/lib/control-api';
 import { fetchClaimsFromEngine } from '@/lib/engine';
 import { getSupabaseAdmin, getTenantId } from '@/lib/supabase-server';
 import type { ClaimRow, DashboardStats } from '@/lib/types';
@@ -68,6 +69,15 @@ async function loadClaimsFromSupabase(): Promise<ClaimRow[]> {
 
 export async function GET() {
   try {
+    const jwtClaims = await fetchClaimsWithJwt();
+    if (jwtClaims.status === 'ok') {
+      const claims = jwtClaims.claims as ClaimRow[];
+      return NextResponse.json(
+        { claims, stats: computeStats(claims), source: 'jwt' },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
     const engine = await fetchClaimsFromEngine();
     const claims =
       engine.status === 'ok' ? engine.claims : await loadClaimsFromSupabase();

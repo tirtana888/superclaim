@@ -127,3 +127,29 @@ def build_decision(
         requires_human_review=decision == "REVIEW",
         ai_cost_usd=round(ai_cost_usd, 6),
     )
+
+
+def decide(
+    *,
+    external_claim_id: str,
+    policy_result: PolicyEvaluationResult,
+    duplicate_result: DuplicateAnalysisResult,
+    fraud_result: FraudAnalysisResult,
+    vision_result: VisionAnalysisResult | None,
+    ocr_result: OcrAnalysisResult | None,
+    processing_time_ms: int,
+) -> "ClaimAnalysisResult":
+    """Canonical entrypoint — wraps build_decision()."""
+    from app.schemas.results import ClaimAnalysisResult
+    from app.services.result_adapters import decision_to_analysis
+
+    legacy = build_decision(
+        external_claim_id=external_claim_id,
+        policy_result=policy_result,
+        duplicate_result=duplicate_result,
+        fraud_result=fraud_result,
+        vision_result=vision_result,
+        ocr_result=ocr_result,
+        processing_time_ms=processing_time_ms,
+    )
+    return decision_to_analysis(legacy)

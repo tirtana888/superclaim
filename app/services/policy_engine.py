@@ -325,3 +325,35 @@ async def evaluate_policy(
         policy_version=policy.version if policy else None,
         config=config.model_dump(),
     )
+
+
+async def evaluate(
+    db: AsyncSession,
+    *,
+    tenant_id: UUID,
+    claim_id: UUID,
+    external_policy_id: str | None,
+    device_category: str,
+    damage_description: str | None = None,
+    damage_type: str | None = None,
+    purchase_date: date | None = None,
+    claim_date: date | None = None,
+    serial_number: str | None = None,
+) -> "PolicyResult":
+    """Canonical entrypoint — wraps evaluate_policy()."""
+    from app.schemas.results import PolicyResult
+    from app.services.result_adapters import to_policy_result
+
+    legacy = await evaluate_policy(
+        db,
+        tenant_id=tenant_id,
+        claim_id=claim_id,
+        external_policy_id=external_policy_id,
+        device_category=device_category,
+        damage_description=damage_description,
+        damage_type=damage_type,
+        purchase_date=purchase_date,
+        claim_date=claim_date,
+        serial_number=serial_number,
+    )
+    return to_policy_result(legacy)

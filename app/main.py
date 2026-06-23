@@ -8,10 +8,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.control import (
     auth_router,
+    claims_control_router,
     credentials_router,
     devices_router,
     policies_router,
     team_router,
+    usage_router,
 )
 from app.api.v1.claim_results import router as claim_results_router
 from app.api.v1.claims import router as claims_router
@@ -42,6 +44,8 @@ app.include_router(policies_router)
 app.include_router(devices_router)
 app.include_router(credentials_router)
 app.include_router(team_router)
+app.include_router(claims_control_router)
+app.include_router(usage_router)
 
 
 @app.exception_handler(StarletteHTTPException)

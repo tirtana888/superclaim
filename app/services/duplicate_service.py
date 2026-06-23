@@ -216,3 +216,23 @@ async def analyze_duplicates_and_exif(
         duplicate_score=max_duplicate_score,
         exif_data=merged_exif,
     )
+
+
+async def check(
+    tenant_id: UUID,
+    claim_id: UUID,
+    images: list[tuple[bytes, str]],
+    *,
+    claim_date: date | None = None,
+    db: AsyncSession | None = None,
+) -> "DuplicateResult":
+    """Canonical entrypoint — wraps analyze_duplicates_and_exif()."""
+    from app.schemas.results import DuplicateResult
+    from app.services.result_adapters import to_duplicate_result
+
+    if db is None:
+        raise ValueError("db session is required")
+    legacy = await analyze_duplicates_and_exif(
+        db, tenant_id=tenant_id, claim_id=claim_id, images=images, claim_date=claim_date
+    )
+    return to_duplicate_result(legacy)
