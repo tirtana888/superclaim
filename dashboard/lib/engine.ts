@@ -18,10 +18,10 @@ export function getEngineUrl() {
 export interface SubmitClaimPayload {
   claim_id: string;
   device_category: string;
-  serial_number_input?: string;
-  purchase_date?: string;
-  claim_date?: string;
-  damage_description?: string;
+  serial_number_input: string;
+  purchase_date: string;
+  claim_date: string;
+  damage_description: string;
   policy_id?: string;
   images: {
     filename: string;

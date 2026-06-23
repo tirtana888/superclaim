@@ -16,5 +16,9 @@ def test_claim_analyze_request_requires_images() -> None:
         ClaimAnalyzeRequest(
             claim_id="CLM-1",
             device_category="phone",
+            serial_number_input="SN123",
+            purchase_date="2024-01-01",
+            claim_date="2025-01-01",
+            damage_description="Cracked screen",
             images=[],
         )

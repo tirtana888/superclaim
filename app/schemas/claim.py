@@ -22,11 +22,11 @@ class ClaimImageInput(BaseModel):
 class ClaimAnalyzeRequest(BaseModel):
     claim_id: str = Field(..., min_length=1, max_length=255)
     device_category: str = Field(..., min_length=1, max_length=100)
-    serial_number_input: str | None = Field(default=None, max_length=255)
-    purchase_date: date | None = None
-    claim_date: date | None = None
-    damage_description: str | None = None
-    images: list[ClaimImageInput] = Field(..., min_length=1)
+    serial_number_input: str = Field(..., min_length=1, max_length=255)
+    purchase_date: date
+    claim_date: date
+    damage_description: str = Field(..., min_length=1)
+    images: list[ClaimImageInput] = Field(..., min_length=1, max_length=10)
     policy_id: str | None = Field(default=None, max_length=255)
     metadata: dict[str, Any] = Field(default_factory=dict)
 

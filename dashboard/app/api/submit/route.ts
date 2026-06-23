@@ -24,6 +24,21 @@ export async function POST(request: Request) {
     if (!payload.images?.length) {
       return NextResponse.json({ error: 'At least one image is required' }, { status: 400 });
     }
+    if (payload.images.length > 10) {
+      return NextResponse.json({ error: 'Maximum 10 images per claim' }, { status: 400 });
+    }
+    if (!payload.serial_number_input?.trim()) {
+      return NextResponse.json({ error: 'serial_number_input is required' }, { status: 400 });
+    }
+    if (!payload.purchase_date?.trim()) {
+      return NextResponse.json({ error: 'purchase_date is required' }, { status: 400 });
+    }
+    if (!payload.claim_date?.trim()) {
+      return NextResponse.json({ error: 'claim_date is required' }, { status: 400 });
+    }
+    if (!payload.damage_description?.trim()) {
+      return NextResponse.json({ error: 'damage_description is required' }, { status: 400 });
+    }
 
     const result = await submitClaimToEngine(payload);
     return NextResponse.json(result, { status: 202 });
