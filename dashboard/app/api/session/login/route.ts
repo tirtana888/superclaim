@@ -15,8 +15,9 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({
-    user: data.user,
-    tenant: data.tenant,
+    user: data.user ?? null,
+    tenant: data.tenant ?? null,
+    platform_admin: data.platform_admin ?? null,
   });
   const secure = process.env.NODE_ENV === 'production';
   response.cookies.set(ACCESS_COOKIE, data.tokens.access_token, {

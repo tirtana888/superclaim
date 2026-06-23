@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14
 
+    # Platform superadmin bootstrap (optional — creates first admin if none exists)
+    superadmin_email: str = ""
+    superadmin_password: str = ""
+
     # Data Plane API credential headers (key id + secret)
     api_key_id_header: str = "X-API-Key-Id"
     api_secret_header: str = "X-API-Secret"

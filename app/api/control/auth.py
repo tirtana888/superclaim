@@ -5,12 +5,14 @@ from __future__ import annotations
 import re
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import (
     create_access_token,
+    create_platform_access_token,
+    create_platform_refresh_token,
     create_refresh_token,
     decode_token,
     get_current_tenant,
@@ -19,8 +21,10 @@ from app.core.security import (
     verify_password,
 )
 from app.database import get_db
+from app.models.platform_admin import PlatformAdmin
 from app.models.tenant import Tenant
 from app.models.user import User
+from app.schemas.admin import PlatformAdminOut
 from app.schemas.auth import (
     AuthResponse,
     LoginRequest,
@@ -68,6 +72,13 @@ def _tokens_for(user: User) -> TokenResponse:
     )
 
 
+def _platform_tokens_for(admin: PlatformAdmin) -> TokenResponse:
+    return TokenResponse(
+        access_token=create_platform_access_token(admin_id=admin.id),
+        refresh_token=create_platform_refresh_token(admin_id=admin.id),
+    )
+
+
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)) -> AuthResponse:
     slug = payload.slug.strip() if payload.slug else None
@@ -106,6 +117,27 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)) -> 
 @router.post("/login", response_model=AuthResponse)
 async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)) -> AuthResponse:
     email = str(payload.email).lower()
+
+    if not payload.tenant_slug:
+        admin_result = await db.execute(
+            select(PlatformAdmin).where(
+                PlatformAdmin.email == email,
+                PlatformAdmin.status == "active",
+            )
+        )
+        admin = admin_result.scalar_one_or_none()
+        if admin is not None:
+            if not verify_password(payload.password, admin.password_hash):
+                raise _error(
+                    "INVALID_CREDENTIALS",
+                    "Invalid email or password",
+                    status.HTTP_401_UNAUTHORIZED,
+                )
+            return AuthResponse(
+                platform_admin=PlatformAdminOut.model_validate(admin),
+                tokens=_platform_tokens_for(admin),
+            )
+
     stmt = select(User).where(User.email == email, User.status == "active")
     if payload.tenant_slug:
         stmt = stmt.join(Tenant, Tenant.id == User.tenant_id).where(
@@ -146,14 +178,34 @@ async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)) -
     from uuid import UUID
 
     try:
-        user_id = UUID(claims["sub"])
+        subject_id = UUID(claims["sub"])
+    except (KeyError, ValueError) as exc:
+        raise _error("INVALID_TOKEN", "Malformed token claims", status.HTTP_401_UNAUTHORIZED) from exc
+
+    if claims.get("plat"):
+        result = await db.execute(
+            select(PlatformAdmin).where(
+                PlatformAdmin.id == subject_id,
+                PlatformAdmin.status == "active",
+            )
+        )
+        admin = result.scalar_one_or_none()
+        if admin is None:
+            raise _error(
+                "ADMIN_NOT_FOUND",
+                "Platform admin no longer exists or is inactive",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+        return _platform_tokens_for(admin)
+
+    try:
         tenant_id = UUID(claims["tid"])
     except (KeyError, ValueError) as exc:
         raise _error("INVALID_TOKEN", "Malformed token claims", status.HTTP_401_UNAUTHORIZED) from exc
 
     result = await db.execute(
         select(User).where(
-            User.id == user_id,
+            User.id == subject_id,
             User.tenant_id == tenant_id,
             User.status == "active",
         )
@@ -167,9 +219,56 @@ async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)) -
 
 @router.get("/me", response_model=MeResponse)
 async def me(
-    user: User = Depends(get_current_user),
-    tenant: Tenant = Depends(get_current_tenant),
+    authorization: str = Header(..., alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
 ) -> MeResponse:
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise _error("INVALID_AUTH_HEADER", "Authorization must be a Bearer token", status.HTTP_401_UNAUTHORIZED)
+
+    claims = decode_token(token, expected_type="access")
+    from uuid import UUID
+
+    try:
+        subject_id = UUID(claims["sub"])
+    except (KeyError, ValueError) as exc:
+        raise _error("INVALID_TOKEN", "Malformed token claims", status.HTTP_401_UNAUTHORIZED) from exc
+
+    if claims.get("plat"):
+        result = await db.execute(
+            select(PlatformAdmin).where(
+                PlatformAdmin.id == subject_id,
+                PlatformAdmin.status == "active",
+            )
+        )
+        admin = result.scalar_one_or_none()
+        if admin is None:
+            raise _error("ADMIN_NOT_FOUND", "Platform admin not found", status.HTTP_401_UNAUTHORIZED)
+        return MeResponse(platform_admin=PlatformAdminOut.model_validate(admin))
+
+    try:
+        tenant_id = UUID(claims["tid"])
+    except (KeyError, ValueError) as exc:
+        raise _error("INVALID_TOKEN", "Malformed token claims", status.HTTP_401_UNAUTHORIZED) from exc
+
+    user_result = await db.execute(
+        select(User).where(
+            User.id == subject_id,
+            User.tenant_id == tenant_id,
+            User.status == "active",
+        )
+    )
+    user = user_result.scalar_one_or_none()
+    if user is None:
+        raise _error("USER_NOT_FOUND", "User not found", status.HTTP_401_UNAUTHORIZED)
+
+    tenant_result = await db.execute(
+        select(Tenant).where(Tenant.id == tenant_id, Tenant.is_active.is_(True))
+    )
+    tenant = tenant_result.scalar_one_or_none()
+    if tenant is None:
+        raise _error("TENANT_NOT_FOUND", "Tenant not found", status.HTTP_401_UNAUTHORIZED)
+
     return MeResponse(
         user=UserOut.model_validate(user),
         tenant=TenantOut.model_validate(tenant),

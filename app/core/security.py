@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.models.api_credential import ApiCredential
+from app.models.platform_admin import PlatformAdmin
 from app.models.tenant import Tenant
 from app.models.user import User
 
@@ -82,17 +83,26 @@ def verify_secret(secret: str, secret_hash: str) -> bool:
 
 
 def _create_token(
-    *, user_id: UUID, tenant_id: UUID, role: str, token_type: TokenType, expires_delta: timedelta
+    *,
+    user_id: UUID,
+    tenant_id: UUID | None,
+    role: str,
+    token_type: TokenType,
+    expires_delta: timedelta,
+    is_platform_admin: bool = False,
 ) -> str:
     now = datetime.now(UTC)
-    payload = {
+    payload: dict[str, str | int | bool] = {
         "sub": str(user_id),
-        "tid": str(tenant_id),
         "role": role,
         "type": token_type,
         "iat": int(now.timestamp()),
         "exp": int((now + expires_delta).timestamp()),
     }
+    if is_platform_admin:
+        payload["plat"] = True
+    elif tenant_id is not None:
+        payload["tid"] = str(tenant_id)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
@@ -113,6 +123,28 @@ def create_refresh_token(*, user_id: UUID, tenant_id: UUID, role: str) -> str:
         role=role,
         token_type="refresh",
         expires_delta=timedelta(days=settings.refresh_token_expire_days),
+    )
+
+
+def create_platform_access_token(*, admin_id: UUID) -> str:
+    return _create_token(
+        user_id=admin_id,
+        tenant_id=None,
+        role="superadmin",
+        token_type="access",
+        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
+        is_platform_admin=True,
+    )
+
+
+def create_platform_refresh_token(*, admin_id: UUID) -> str:
+    return _create_token(
+        user_id=admin_id,
+        tenant_id=None,
+        role="superadmin",
+        token_type="refresh",
+        expires_delta=timedelta(days=settings.refresh_token_expire_days),
+        is_platform_admin=True,
     )
 
 
@@ -204,6 +236,42 @@ def require_role(*roles: str):
         return user
 
     return _guard
+
+
+def _bearer_token(authorization: str) -> str:
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise _auth_error("INVALID_AUTH_HEADER", "Authorization must be a Bearer token")
+    return token
+
+
+async def get_current_platform_admin(
+    authorization: str = Header(..., alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> PlatformAdmin:
+    """JWT dependency for platform superadmin (Control Plane /admin routes)."""
+    token = _bearer_token(authorization)
+    payload = decode_token(token, expected_type="access")
+    if not payload.get("plat"):
+        raise _forbidden("Platform superadmin access required")
+    try:
+        admin_id = UUID(payload["sub"])
+    except (KeyError, ValueError) as exc:
+        raise _auth_error("INVALID_TOKEN", "Malformed token claims") from exc
+
+    result = await db.execute(
+        select(PlatformAdmin).where(
+            PlatformAdmin.id == admin_id,
+            PlatformAdmin.status == "active",
+        )
+    )
+    admin = result.scalar_one_or_none()
+    if admin is None:
+        raise _auth_error("ADMIN_NOT_FOUND", "Platform admin no longer exists or is inactive")
+    return admin
+
+
+require_platform_admin = get_current_platform_admin
 
 
 # ---------------------------------------------------------------------------

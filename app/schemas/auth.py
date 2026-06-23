@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.schemas.admin import PlatformAdminOut
+
 
 class SignupRequest(BaseModel):
     tenant_name: str = Field(..., min_length=2, max_length=255)
@@ -58,11 +60,13 @@ class TenantOut(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    user: UserOut
-    tenant: TenantOut
+    user: UserOut | None = None
+    platform_admin: PlatformAdminOut | None = None
+    tenant: TenantOut | None = None
     tokens: TokenResponse
 
 
 class MeResponse(BaseModel):
-    user: UserOut
-    tenant: TenantOut
+    user: UserOut | None = None
+    platform_admin: PlatformAdminOut | None = None
+    tenant: TenantOut | None = None

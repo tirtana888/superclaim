@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.admin import admin_router
 from app.api.control import (
     auth_router,
     claims_control_router,
@@ -20,6 +21,7 @@ from app.api.v1.claims import router as claims_router
 from app.celery_app import celery_app
 from app.config import settings
 from app.database import check_db_health
+from app.services.bootstrap_service import ensure_superadmin
 from app.storage.supabase_client import check_storage_health
 
 
@@ -27,6 +29,10 @@ from app.storage.supabase_client import check_storage_health
 async def lifespan(_: FastAPI):
     if settings.sentry_dsn:
         sentry_sdk.init(dsn=settings.sentry_dsn, environment=settings.app_env)
+    from app.database import get_session_factory
+
+    async with get_session_factory()() as db:
+        await ensure_superadmin(db)
     yield
 
 
@@ -46,6 +52,7 @@ app.include_router(credentials_router)
 app.include_router(team_router)
 app.include_router(claims_control_router)
 app.include_router(usage_router)
+app.include_router(admin_router)
 
 
 @app.exception_handler(StarletteHTTPException)

@@ -106,7 +106,7 @@ def test_login_success(client: TestClient) -> None:
         id=tenant_id, name="Acme", slug="acme", status="active", plan_tier="trial",
         api_key_hash="x" * 64, is_active=True,
     )
-    session = FakeSession([FakeResult(scalars_list=[user]), FakeResult(scalar=tenant)])
+    session = FakeSession([FakeResult(scalar=None), FakeResult(scalars_list=[user]), FakeResult(scalar=tenant)])
     _override_db(session)
 
     resp = client.post(
@@ -122,7 +122,7 @@ def test_login_wrong_password_rejected(client: TestClient) -> None:
         id=uuid4(), tenant_id=uuid4(), email="owner@acme.io",
         password_hash=hash_password("supersecret"), role="owner", status="active",
     )
-    session = FakeSession([FakeResult(scalars_list=[user])])
+    session = FakeSession([FakeResult(scalar=None), FakeResult(scalars_list=[user])])
     _override_db(session)
 
     resp = client.post(
@@ -137,7 +137,7 @@ def test_login_ambiguous_requires_slug(client: TestClient) -> None:
               password_hash=hash_password("p"), role="owner", status="active")
     u2 = User(id=uuid4(), tenant_id=uuid4(), email="a@b.io",
               password_hash=hash_password("p"), role="owner", status="active")
-    session = FakeSession([FakeResult(scalars_list=[u1, u2])])
+    session = FakeSession([FakeResult(scalar=None), FakeResult(scalars_list=[u1, u2])])
     _override_db(session)
 
     resp = client.post("/api/auth/login", json={"email": "a@b.io", "password": "p"})

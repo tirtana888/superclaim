@@ -9,6 +9,7 @@ import pytest
 from app.core.database import tenant_query
 from app.core.security import (
     create_access_token,
+    create_platform_access_token,
     create_refresh_token,
     decode_token,
     get_tenant_from_apikey,
@@ -42,6 +43,17 @@ def test_access_token_roundtrip() -> None:
     assert claims["tid"] == str(tid)
     assert claims["role"] == "owner"
     assert claims["type"] == "access"
+    assert "plat" not in claims
+
+
+def test_platform_access_token_roundtrip() -> None:
+    admin_id = uuid4()
+    token = create_platform_access_token(admin_id=admin_id)
+    claims = decode_token(token, expected_type="access")
+    assert claims["sub"] == str(admin_id)
+    assert claims["plat"] is True
+    assert claims["role"] == "superadmin"
+    assert "tid" not in claims
 
 
 def test_decode_token_wrong_type_rejected() -> None:

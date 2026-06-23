@@ -31,7 +31,11 @@ export function LoginForm() {
       setError(data?.detail?.message ?? 'Login failed');
       return;
     }
-    router.push(searchParams.get('next') || '/');
+    router.push(
+      data.platform_admin
+        ? '/admin'
+        : searchParams.get('next') || '/',
+    );
     router.refresh();
   }
 
