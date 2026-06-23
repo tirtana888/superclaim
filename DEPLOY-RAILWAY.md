@@ -212,8 +212,27 @@ Total awal: **~$15–20/bulan** untuk staging trial.
 | Klaim stuck `processing` | Cek log worker di Railway |
 | DB connection error | Pastikan `SUPABASE_DB_URL` pakai `postgresql+asyncpg://` dan password URL-encoded |
 | Upload gagal | Cek `SUPABASE_SERVICE_ROLE_KEY` + bucket `claim-media` |
-| `[Errno 101] Network is unreachable` on submit | IPv6 route issue from Railway → redeploy API with latest code (forces IPv4). Test `GET /health/storage` |
+| `[Errno 101] Network is unreachable` (submit / `/health/db` 503) | **Koneksi DB langsung Supabase (`db.<ref>.supabase.co`) itu IPv6-only dan tidak bisa diakses dari Railway.** Ganti `SUPABASE_DB_URL` ke **connection pooler** (lihat di bawah). |
 | `/health/storage` 503 | `SUPABASE_URL` / service role key salah, atau bucket tidak ada |
+| `/health/db` 503 | `SUPABASE_DB_URL` salah / masih pakai host direct IPv6-only → pakai pooler |
+
+### Wajib: pakai Supabase connection pooler (bukan host direct)
+
+Host direct `db.<ref>.supabase.co` hanya punya alamat IPv6. Railway tidak punya rute IPv6 keluar, jadi koneksi gagal dengan `[Errno 101] Network is unreachable`. Gunakan **Supavisor pooler** yang punya alamat IPv4.
+
+Ambil string-nya dari **Supabase Dashboard → Project Settings → Database → Connection string → Session pooler**, atau pakai format ini (project `globalbeli`, region `ap-south-1`):
+
+```
+SUPABASE_DB_URL=postgresql+asyncpg://postgres.rlszvadiebttvguupegp:<URL_ENCODED_PASSWORD>@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+```
+
+Catatan:
+- Username pooler = `postgres.<project_ref>` (mis. `postgres.rlszvadiebttvguupegp`), bukan `postgres` saja.
+- Host = `aws-1-ap-south-1.pooler.supabase.com` (cluster bisa `aws-0`/`aws-1` — ikuti dashboard).
+- Port `5432` = session pooler (disarankan). Port `6543` = transaction pooler (juga didukung, kode sudah set `statement_cache_size=0`).
+- Password tetap di-URL-encode (mis. `?` → `%3F`).
+
+Cek setelah redeploy: `GET /health/db` harus `{"status":"ok","db":"ok"}`.
 
 ---
 
