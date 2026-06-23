@@ -21,5 +21,7 @@ if [ "${SUPERCLAIM_ROLE:-}" = "worker" ]; then
 fi
 
 PORT="${PORT:-8000}"
+echo "Running database migrations..."
+alembic upgrade head
 echo "Starting API on port ${PORT} (service=${RAILWAY_SERVICE_NAME:-api})..."
 exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
