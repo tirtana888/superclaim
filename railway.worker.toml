@@ -1,9 +1,9 @@
-# Celery worker — NO HTTP healthcheck (worker does not expose /health)
+# Optional: same Dockerfile as API. Entrypoint auto-starts Celery when service name contains "worker".
+# Do NOT enable HTTP healthcheck on this service.
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.worker"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "celery -A app.celery_app.celery_app worker --loglevel=info --concurrency=2"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5

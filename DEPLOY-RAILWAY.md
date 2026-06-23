@@ -12,8 +12,8 @@ Lokal di Windows sulit karena butuh Redis (Memurai). Di Railway, Redis + API + C
 
 | Service | Config file | Dockerfile | Healthcheck |
 |---------|-------------|------------|-------------|
-| `superclaim-api` | `railway.toml` | `Dockerfile` | `/health` ON |
-| `superclaim-worker` | `railway.worker.toml` | `Dockerfile.worker` | OFF |
+| `superclaim-api` | `railway.toml` | `Dockerfile` | `/health` ON (set di Railway UI) |
+| `superclaim-worker` | `railway.worker.toml` | `Dockerfile` (sama) | OFF |
 
 ## Arsitektur
 
@@ -69,13 +69,17 @@ Jangan commit file `.env` (sudah di `.gitignore`).
 ### Service B — Celery worker
 
 1. **+ New** → **GitHub Repo** → repo yang sama lagi
-2. Nama: `superclaim-worker`
-3. **Settings → Config file path**: `railway.worker.toml` ← **wajib**
-4. **Settings → Build**: Dockerfile path = `Dockerfile.worker` (otomatis dari config)
-5. **Settings → Deploy → Healthcheck**: **OFF** / kosongkan path (worker tidak punya HTTP)
-6. **Jangan** generate public domain untuk worker (internal saja).
+2. Nama service **harus mengandung `worker`**, mis. `superclaim-worker` (entrypoint auto-detect)
+3. **Settings → Config file path**: `railway.worker.toml` (opsional, sama dengan API Dockerfile)
+4. **Settings → Deploy → Healthcheck**: **OFF** / kosongkan path
+5. **Jangan** generate public domain untuk worker
 
-> **Penting:** Jangan pakai `railway.toml` (API) di worker. Itu memicu healthcheck ke `/health` padahal Celery tidak expose HTTP → error `1/1 replicas never became healthy`.
+> Entrypoint `scripts/docker-entrypoint.sh` start Celery jika `RAILWAY_SERVICE_NAME` mengandung `worker`.
+
+### Service A — API (healthcheck)
+
+Setelah deploy, di service **API** saja:
+**Settings → Deploy → Healthcheck Path** → `/health`
 
 ---
 
