@@ -9,6 +9,12 @@ interface ClaimsTableProps {
   claims: ClaimRow[];
 }
 
+function primaryReason(claim: ClaimRow): string | null {
+  const reasons = claim.metadata?.analysis_result?.reasons;
+  if (!reasons?.length) return null;
+  return reasons[0].description;
+}
+
 export function ClaimsTable({ claims }: ClaimsTableProps) {
   if (claims.length === 0) {
     return (
@@ -32,6 +38,7 @@ export function ClaimsTable({ claims }: ClaimsTableProps) {
               <th className="px-6 py-3 font-medium">Serial</th>
               <th className="px-6 py-3 font-medium">Status</th>
               <th className="px-6 py-3 font-medium">Decision</th>
+              <th className="px-6 py-3 font-medium">Analysis</th>
               <th className="px-6 py-3 font-medium">Fraud</th>
               <th className="px-6 py-3 font-medium">Created</th>
             </tr>
@@ -64,6 +71,9 @@ export function ClaimsTable({ claims }: ClaimsTableProps) {
                     ) : (
                       <span className="badge-processing">processing</span>
                     )}
+                  </td>
+                  <td className="max-w-xs px-6 py-3 text-[hsl(var(--muted-foreground))]">
+                    {primaryReason(claim) ?? '—'}
                   </td>
                   <td className="px-6 py-3">
                     {analysis ? analysis.fraud_score.toFixed(2) : '—'}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+import { ClaimAnalysisSummary } from '@/components/claim-analysis-summary';
 import type { ClaimRow } from '@/lib/types';
 import { formatMs, formatUsd, statusBadgeClass } from '@/lib/utils';
 
@@ -72,6 +73,8 @@ export function ClaimDetailView({ claim }: ClaimDetailViewProps) {
         </div>
       ) : (
         <>
+          <ClaimAnalysisSummary analysis={analysis} />
+
           <div className="grid gap-4 md:grid-cols-4">
             <div className="card">
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Confidence</p>
@@ -91,39 +94,25 @@ export function ClaimDetailView({ claim }: ClaimDetailViewProps) {
             </div>
           </div>
 
-          <Section title="Reasons">
-            <ul className="space-y-2">
-              {analysis.reasons.map((reason) => (
-                <li
-                  key={reason.code}
-                  className="rounded-lg border border-[hsl(var(--border))] px-4 py-3 text-sm"
-                >
-                  <span className="font-medium text-emerald-400">{reason.code}</span>
-                  <span className="mx-2 text-[hsl(var(--muted-foreground))]">·</span>
-                  {reason.description}
-                </li>
-              ))}
-            </ul>
-          </Section>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Section title="Vision (Gemini)">
-              <JsonBlock data={analysis.vision_result} />
-            </Section>
-            <Section title="OCR (Mistral)">
-              <JsonBlock data={analysis.ocr_result} />
-            </Section>
-            <Section title="Policy">
-              <JsonBlock data={analysis.policy_result} />
-            </Section>
-            <Section title="Duplicate / metadata">
-              <p className="mb-2 text-sm">
-                Duplicate detected:{' '}
-                <strong>{analysis.duplicate_detected ? 'Yes' : 'No'}</strong>
-              </p>
-              <JsonBlock data={claim.metadata as Record<string, unknown>} />
-            </Section>
-          </div>
+          <details className="card">
+            <summary className="cursor-pointer text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-white">
+              Raw JSON (debug)
+            </summary>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Section title="Vision (Gemini)">
+                <JsonBlock data={analysis.vision_result} />
+              </Section>
+              <Section title="OCR (Mistral)">
+                <JsonBlock data={analysis.ocr_result} />
+              </Section>
+              <Section title="Policy">
+                <JsonBlock data={analysis.policy_result} />
+              </Section>
+              <Section title="Metadata">
+                <JsonBlock data={claim.metadata as Record<string, unknown>} />
+              </Section>
+            </div>
+          </details>
         </>
       )}
     </div>
