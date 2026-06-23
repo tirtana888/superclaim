@@ -85,3 +85,39 @@ class UsageRecordOut(BaseModel):
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+# ---- API credentials (Data Plane keys) ----
+
+DEFAULT_API_SCOPES = ["claims:analyze"]
+
+
+class ApiCredentialCreate(BaseModel):
+    label: str | None = Field(default=None, max_length=255)
+    scopes: list[str] = Field(default_factory=lambda: list(DEFAULT_API_SCOPES))
+    expires_at: datetime | None = None
+
+
+class ApiCredentialOut(BaseModel):
+    id: UUID
+    tenant_id: UUID
+    key_id: str
+    label: str | None = None
+    scopes: list[str]
+    status: str
+    last_used_at: datetime | None = None
+    expires_at: datetime | None = None
+    created_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class ApiCredentialCreated(ApiCredentialOut):
+    """Returned only once at creation — includes the plaintext secret."""
+
+    secret: str
+
+
+class ApiCredentialListResponse(BaseModel):
+    credentials: list[ApiCredentialOut]
+    total: int
