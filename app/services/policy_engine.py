@@ -49,7 +49,8 @@ async def _load_policy(
     policy = result.scalar_one_or_none()
     if policy is None:
         return None, DEFAULT_POLICY_CONFIG
-    return policy, PolicyConfig.model_validate(policy.config)
+    rules_source = policy.rules_json if policy.rules_json else policy.config
+    return policy, PolicyConfig.model_validate(rules_source)
 
 
 def _rule_warranty_active(
@@ -251,6 +252,8 @@ async def _rule_cooling_period(
 
 async def _log_rules(
     db: AsyncSession,
+    *,
+    tenant_id: UUID,
     claim_id: UUID,
     policy: Policy | None,
     rules: list[RuleResult],
@@ -260,6 +263,7 @@ async def _log_rules(
     for rule in rules:
         db.add(
             ClaimPolicyLog(
+                tenant_id=tenant_id,
                 claim_id=claim_id,
                 policy_id=policy.id,
                 rule_id=rule.rule_id,
@@ -301,7 +305,7 @@ async def evaluate_policy(
         ),
     ]
 
-    await _log_rules(db, claim_id, policy, rules)
+    await _log_rules(db, tenant_id=tenant_id, claim_id=claim_id, policy=policy, rules=rules)
 
     failed = next((rule for rule in rules if not rule.passed), None)
     covered = failed is None

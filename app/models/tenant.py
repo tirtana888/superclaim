@@ -37,3 +37,18 @@ class Tenant(Base, TimestampMixin):
         back_populates="tenant",
         cascade="all, delete-orphan",
     )
+    devices: Mapped[list["Device"]] = relationship(
+        "Device",
+        back_populates="tenant",
+        cascade="all, delete-orphan",
+    )
+    claim_events: Mapped[list["ClaimEvent"]] = relationship(
+        "ClaimEvent",
+        back_populates="tenant",
+        cascade="all, delete-orphan",
+    )
+    usage_records: Mapped[list["UsageRecord"]] = relationship(
+        "UsageRecord",
+        back_populates="tenant",
+        cascade="all, delete-orphan",
+    )

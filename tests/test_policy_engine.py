@@ -96,6 +96,9 @@ async def test_evaluate_policy_all_rules_pass() -> None:
     assert result.rule_fired is None
     assert len(result.rules) == 5
     assert session.add.call_count == 5
+    for call in session.add.call_args_list:
+        log = call.args[0]
+        assert getattr(log, "tenant_id", None) == tenant_id
 
 
 @pytest.mark.asyncio
