@@ -50,7 +50,7 @@ Tanpa ini Railway akan build folder root (Python API) bukan Next.js.
 | Setting | Nilai |
 |---------|-------|
 | **Config file path** | `railway.toml` *(otomatis dari folder `dashboard/`)* |
-| **Builder** | Nixpacks |
+| **Builder** | Railpack (bukan Nixpacks — deprecated) |
 | **Build Command** | `npm install && npm run build` |
 | **Custom Start Command** | *(kosong — pakai `npm run start` dari config)* |
 | **Healthcheck Path** | `/` |
@@ -60,7 +60,7 @@ Isi `dashboard/railway.toml` di repo:
 
 ```toml
 [build]
-builder = "NIXPACKS"
+builder = "RAILPACK"
 buildCommand = "npm install && npm run build"
 
 [deploy]
