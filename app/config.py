@@ -51,6 +51,13 @@ class Settings(BaseSettings):
                 "REDIS_URL must start with redis:// or rediss://. "
                 "Remove invalid CELERY_RESULT_BACKEND / CELERY_BROKER_URL from Railway Variables."
             )
+        if self.app_env == "production" and (
+            "localhost" in url or "127.0.0.1" in url
+        ):
+            raise RuntimeError(
+                "REDIS_URL points to localhost in production. "
+                "Set REDIS_URL=${{Redis.REDIS_URL}} from Railway Redis service."
+            )
         return url
 
 
