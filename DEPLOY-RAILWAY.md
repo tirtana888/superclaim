@@ -68,6 +68,10 @@ Jangan commit file `.env` (sudah di `.gitignore`).
 
 ### Service B — Celery worker
 
+📖 **Tutorial lengkap:** [`docs/RAILWAY-WORKER-TUTORIAL.md`](docs/RAILWAY-WORKER-TUTORIAL.md)
+
+Ringkas:
+
 1. **+ New** → **GitHub Repo** → repo yang sama lagi
 2. Nama service **harus mengandung `worker`**, mis. `superclaim-worker` (entrypoint auto-detect)
 3. **Settings → Config file path**: `railway.worker.toml` (opsional, sama dengan API Dockerfile)
