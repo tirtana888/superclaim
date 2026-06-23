@@ -45,13 +45,22 @@ export function ClaimSubmitForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [engineOnline, setEngineOnline] = useState<boolean | null>(null);
+  const [engineUrl, setEngineUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/submit')
       .then((r) => r.json())
-      .then((d) => setEngineOnline(d.online))
+      .then((d) => {
+        setEngineOnline(d.online);
+        setEngineUrl(d.url ?? null);
+      })
       .catch(() => setEngineOnline(false));
   }, []);
+
+  const isLocalEngine =
+    !engineUrl ||
+    engineUrl.includes('localhost') ||
+    engineUrl.includes('127.0.0.1');
 
   function handleFileChange(selected: File | null) {
     setFile(selected);
@@ -111,40 +120,44 @@ export function ClaimSubmitForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {engineOnline === false && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 space-y-2">
-          <p className="font-medium">Engine API offline — backend belum jalan di port 8000.</p>
-          <p>Pilih salah satu:</p>
-          <ol className="list-decimal list-inside space-y-1 text-amber-100/90">
-            <li>
-              <strong>Docker Desktop</strong> — install Docker, lalu di folder{' '}
-              <code className="text-amber-50">superclaim</code>:{' '}
-              <code className="text-amber-50">docker compose up --build</code>
-            </li>
-            <li>
-              <strong>Tanpa Docker</strong> — 3 terminal terpisah:
-              <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5">
-                <li>
-                  API:{' '}
-                  <code className="text-amber-50">
-                    python -m uvicorn app.main:app --reload --port 8000
-                  </code>
-                </li>
-                <li>
-                  Worker:{' '}
-                  <code className="text-amber-50">
-                    celery -A app.celery_app.celery_app worker --pool=solo
-                  </code>{' '}
-                  (butuh Redis di :6379)
-                </li>
-                <li>
-                  Dashboard: <code className="text-amber-50">cd dashboard &amp;&amp; npm run dev</code>
-                </li>
-              </ul>
-            </li>
-          </ol>
-          <p className="text-xs text-amber-200/80">
-            Cek: <a href="http://localhost:8000/health" className="underline" target="_blank" rel="noreferrer">localhost:8000/health</a>
-            {' '}· Jalankan <code className="text-amber-50">.\scripts\start-dev.ps1</code> untuk panduan lengkap
-          </p>
+          {isLocalEngine ? (
+            <>
+              <p className="font-medium">
+                Engine API offline — <code className="text-amber-50">SUPERCLAIM_API_URL</code> belum
+                dikonfigurasi.
+              </p>
+              <p>
+                Di <strong>Railway → service dashboard → Variables</strong>, tambahkan:
+              </p>
+              <pre className="overflow-x-auto rounded bg-black/30 p-2 text-xs text-amber-50">
+{`SUPERCLAIM_API_URL=https://superclaim-production.up.railway.app
+SUPERCLAIM_API_KEY=sc_globalbeli_dev_2026
+SUPERCLAIM_TENANT_ID=e1b52fb2-2fb0-4c4d-b9b3-e46e4edec9d6`}
+              </pre>
+              <p className="text-xs text-amber-200/80">
+                Ganti URL dengan domain API Railway Anda (tanpa slash di akhir), lalu{' '}
+                <strong>Redeploy</strong> dashboard.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-medium">
+                Engine API tidak merespons:{' '}
+                <code className="text-amber-50">{engineUrl}</code>
+              </p>
+              <p className="text-xs text-amber-200/80">
+                Cek service <strong>superclaim-api</strong> di Railway masih online, lalu buka{' '}
+                <a
+                  href={`${engineUrl}/health`}
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {engineUrl}/health
+                </a>
+              </p>
+            </>
+          )}
         </div>
       )}
 
