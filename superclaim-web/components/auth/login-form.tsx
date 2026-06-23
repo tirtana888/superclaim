@@ -1,11 +1,9 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,32 +13,36 @@ import { bffRequest } from '@/lib/api';
 import type { MeResponse } from '@/lib/types';
 import { useAuthStore } from '@/store/auth-store';
 
-const schema = z.object({
-  email: z.string().email('Enter a valid email'),
-  password: z.string().min(1, 'Password is required'),
-  tenant_slug: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof schema>;
-
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setSession = useAuthStore((s) => s.setSession);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '', tenant_slug: '' },
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [tenantSlug, setTenantSlug] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(values: FormValues) {
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) {
+      toast.error('Email and password are required');
+      return;
+    }
+    if (!trimmedEmail.includes('@')) {
+      toast.error('Enter a valid email address');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await bffRequest('/api/session/login', {
         method: 'POST',
         body: {
-          email: values.email,
-          password: values.password,
-          tenant_slug: values.tenant_slug?.trim() || undefined,
+          email: trimmedEmail,
+          password,
+          tenant_slug: tenantSlug.trim() || undefined,
         },
       });
       const me = await bffRequest<MeResponse>('/api/session/me');
@@ -51,8 +53,10 @@ export function LoginForm() {
         router.push(searchParams.get('next') || '/overview');
       }
       router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Login failed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -63,27 +67,38 @@ export function LoginForm() {
         <CardDescription>Access your brand workspace</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={onSubmit} noValidate className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
-            {form.formState.errors.email && (
-              <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
-            )}
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="current-password" {...form.register('password')} />
-            {form.formState.errors.password && (
-              <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
-            )}
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="tenant_slug">Workspace slug (if needed)</Label>
-            <Input id="tenant_slug" placeholder="acme-corp" {...form.register('tenant_slug')} />
+            <Input
+              id="tenant_slug"
+              placeholder="acme-corp"
+              value={tenantSlug}
+              onChange={(e) => setTenantSlug(e.target.value)}
+            />
           </div>
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-muted-foreground">

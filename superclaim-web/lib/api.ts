@@ -28,13 +28,25 @@ async function parseJsonSafe(res: Response): Promise<unknown> {
 }
 
 function errorMessage(body: unknown, fallback: string): string {
-  if (body && typeof body === 'object' && 'detail' in body) {
+  if (!body || typeof body !== 'object') return fallback;
+
+  if ('message' in body && typeof (body as { message: unknown }).message === 'string') {
+    return (body as { message: string }).message;
+  }
+
+  if ('detail' in body) {
     const detail = (body as ApiErrorBody).detail;
     if (typeof detail === 'string') return detail;
-    if (detail && typeof detail === 'object' && 'message' in detail) {
-      return String(detail.message ?? fallback);
+    if (detail && typeof detail === 'object') {
+      if ('message' in detail && typeof detail.message === 'string') {
+        return detail.message;
+      }
+      if ('error_code' in detail && detail.error_code === 'VALIDATION_ERROR') {
+        return 'Please check your email and password format';
+      }
     }
   }
+
   return fallback;
 }
 
