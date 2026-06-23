@@ -34,8 +34,33 @@ class DeviceOut(BaseModel):
     batch_id: str | None = None
     source: str
     created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class DeviceUpdate(BaseModel):
+    device_category: str | None = Field(default=None, min_length=1, max_length=100)
+    device_model: str | None = Field(default=None, max_length=255)
+    purchase_date: date | None = None
+    warranty_months: int | None = Field(default=None, ge=1, le=120)
+    customer_ref: str | None = Field(default=None, max_length=255)
+    batch_id: str | None = Field(default=None, max_length=255)
+    source: DeviceSource | None = None
+
+
+class DeviceListResponse(BaseModel):
+    devices: list[DeviceOut]
+    total: int
+
+
+class DeviceBulkCreate(BaseModel):
+    devices: list[DeviceCreate] = Field(..., min_length=1, max_length=500)
+
+
+class DeviceBulkCreateResponse(BaseModel):
+    created: list[DeviceOut]
+    total: int
 
 
 class ClaimEventOut(BaseModel):

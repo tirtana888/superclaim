@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.control import auth_router, policies_router
+from app.api.control import auth_router, devices_router, policies_router
 from app.api.v1.claim_results import router as claim_results_router
 from app.api.v1.claims import router as claims_router
 from app.celery_app import celery_app
@@ -33,6 +33,7 @@ app.include_router(claims_router)
 app.include_router(claim_results_router)
 app.include_router(auth_router)
 app.include_router(policies_router)
+app.include_router(devices_router)
 
 
 @app.exception_handler(StarletteHTTPException)
