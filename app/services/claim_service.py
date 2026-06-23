@@ -72,7 +72,10 @@ async def submit_claim_for_analysis(
     await db.commit()
     await db.refresh(claim)
 
-    process_claim_task.delay(str(claim.id))
+    try:
+        process_claim_task.delay(str(claim.id))
+    except Exception as exc:
+        raise RuntimeError(f"Failed to enqueue claim for processing: {exc}") from exc
 
     return ClaimAnalyzeResponse(
         claim_id=claim.external_claim_id,

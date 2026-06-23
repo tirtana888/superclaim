@@ -31,6 +31,33 @@ export interface SubmitClaimPayload {
   metadata?: Record<string, unknown>;
 }
 
+async function parseEngineResponse(res: Response) {
+  const text = await res.text();
+  if (!text) return { body: null as unknown, raw: '' };
+  try {
+    return { body: JSON.parse(text) as unknown, raw: text };
+  } catch {
+    return { body: null as unknown, raw: text };
+  }
+}
+
+function extractErrorMessage(body: unknown, raw: string, status: number): string {
+  if (body && typeof body === 'object') {
+    const record = body as Record<string, unknown>;
+    const detail = record.detail;
+    if (typeof detail === 'object' && detail !== null) {
+      const detailRecord = detail as Record<string, unknown>;
+      if (typeof detailRecord.message === 'string') return detailRecord.message;
+      return JSON.stringify(detail);
+    }
+    if (typeof detail === 'string') return detail;
+    if (typeof record.message === 'string') return record.message;
+    if (typeof record.error === 'string') return record.error;
+  }
+  if (raw) return raw.slice(0, 300);
+  return `Engine request failed (${status})`;
+}
+
 export async function submitClaimToEngine(payload: SubmitClaimPayload) {
   if (!API_KEY || !TENANT_ID) {
     throw new Error('SUPERCLAIM_API_KEY or SUPERCLAIM_TENANT_ID not configured');
@@ -46,13 +73,9 @@ export async function submitClaimToEngine(payload: SubmitClaimPayload) {
     body: JSON.stringify(payload),
   });
 
-  const body = await res.json();
+  const { body, raw } = await parseEngineResponse(res);
   if (!res.ok) {
-    const message =
-      typeof body.detail === 'object'
-        ? body.detail.message ?? JSON.stringify(body.detail)
-        : body.detail ?? body.message ?? 'Submit failed';
-    throw new Error(message);
+    throw new Error(extractErrorMessage(body, raw, res.status));
   }
   return body;
 }

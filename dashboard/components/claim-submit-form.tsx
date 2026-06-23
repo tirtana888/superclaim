@@ -106,8 +106,14 @@ export function ClaimSubmitForm() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Submit gagal');
+      const text = await res.text();
+      let data: { error?: string } | null = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        throw new Error(text.slice(0, 300) || 'Submit gagal — respons tidak valid dari server');
+      }
+      if (!res.ok) throw new Error(data?.error ?? 'Submit gagal');
 
       router.push(`/claims/${claimId}`);
     } catch (err) {

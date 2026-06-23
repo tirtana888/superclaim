@@ -42,10 +42,25 @@ async def analyze_claim(
             },
         ) from exc
     except RuntimeError as exc:
+        message = str(exc)
+        error_code = (
+            "QUEUE_UNAVAILABLE"
+            if "enqueue" in message.lower() or "broker" in message.lower()
+            else "STORAGE_UNAVAILABLE"
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
-                "error_code": "STORAGE_UNAVAILABLE",
+                "error_code": error_code,
+                "message": message,
+                "detail": None,
+            },
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "INTERNAL_ERROR",
                 "message": str(exc),
                 "detail": None,
             },

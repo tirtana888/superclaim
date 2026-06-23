@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.claim_results import router as claim_results_router
 from app.api.v1.claims import router as claims_router
@@ -26,6 +28,44 @@ app = FastAPI(
 
 app.include_router(claims_router)
 app.include_router(claim_results_router)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
+    if isinstance(exc.detail, dict):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": {"error_code": "HTTP_ERROR", "message": str(exc.detail), "detail": None}},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "error_code": "VALIDATION_ERROR",
+                "message": "Invalid request payload",
+                "detail": exc.errors(),
+            }
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": {
+                "error_code": "INTERNAL_ERROR",
+                "message": str(exc),
+                "detail": None,
+            }
+        },
+    )
 
 
 @app.get("/health")
