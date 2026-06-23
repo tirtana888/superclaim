@@ -31,6 +31,8 @@ from app.schemas.auth import (
     TokenResponse,
     UserOut,
 )
+from app.schemas.team import AcceptInviteRequest
+from app.services import team_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -171,4 +173,32 @@ async def me(
     return MeResponse(
         user=UserOut.model_validate(user),
         tenant=TenantOut.model_validate(tenant),
+    )
+
+
+@router.post("/accept-invite", response_model=AuthResponse)
+async def accept_invite(
+    payload: AcceptInviteRequest,
+    db: AsyncSession = Depends(get_db),
+) -> AuthResponse:
+    try:
+        user = await team_service.accept_invite(
+            db,
+            email=str(payload.email),
+            tenant_slug=payload.tenant_slug,
+            temporary_password=payload.temporary_password,
+            new_password=payload.new_password,
+        )
+    except team_service.TeamStateError as exc:
+        raise _error("INVALID_INVITE", str(exc), status.HTTP_400_BAD_REQUEST) from exc
+
+    tenant_result = await db.execute(select(Tenant).where(Tenant.id == user.tenant_id))
+    tenant = tenant_result.scalar_one_or_none()
+    if tenant is None:
+        raise _error("TENANT_NOT_FOUND", "Workspace not found", status.HTTP_404_NOT_FOUND)
+
+    return AuthResponse(
+        user=UserOut.model_validate(user),
+        tenant=TenantOut.model_validate(tenant),
+        tokens=_tokens_for(user),
     )
