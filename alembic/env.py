@@ -17,9 +17,12 @@ target_metadata = Base.metadata
 
 
 def _sync_database_url() -> str:
+    """Alembic runs synchronously; use psycopg2 (not asyncpg)."""
     url = settings.supabase_db_url
     if url.startswith("postgresql+asyncpg://"):
-        return url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        return url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
 
 
