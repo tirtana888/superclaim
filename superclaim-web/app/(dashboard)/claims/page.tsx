@@ -6,7 +6,15 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsIndicator, TabsList, TabsTab } from '@/components/ui/tabs';
 import { useClaims } from '@/hooks/use-claims';
+
+const STATUS_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'pending', label: 'Pending' },
+];
 
 export default function ClaimsPage() {
   const { data, isLoading, error } = useClaims();
@@ -36,18 +44,18 @@ export default function ClaimsPage() {
         <p className="mt-1 text-sm text-muted-foreground">All warranty claims for your workspace</p>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(String(v))}>
+          <TabsList>
+            {STATUS_TABS.map((t) => (
+              <TabsTab key={t.value} value={t.value}>
+                {t.label}
+              </TabsTab>
+            ))}
+            <TabsIndicator />
+          </TabsList>
+        </Tabs>
         <Input placeholder="Search claim or serial…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
-        <select
-          className="h-9 rounded-lg border border-input bg-background px-3 text-sm shadow-xs-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">All statuses</option>
-          <option value="processing">Processing</option>
-          <option value="completed">Completed</option>
-          <option value="pending">Pending</option>
-        </select>
       </div>
 
       {error && <p className="text-sm text-destructive">{error.message}</p>}

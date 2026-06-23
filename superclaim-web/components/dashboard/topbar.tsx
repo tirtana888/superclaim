@@ -9,9 +9,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/auth-store';
+
+function roleLabel(role: string | undefined): string {
+  if (!role) return 'Member';
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 export function DashboardTopbar() {
   const router = useRouter();
@@ -28,22 +35,37 @@ export function DashboardTopbar() {
   const initials = (user?.email ?? 'U').slice(0, 2).toUpperCase();
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
-      <div>
-        <p className="text-sm font-semibold tracking-tight">{tenant?.name ?? 'Workspace'}</p>
-        <p className="text-xs text-muted-foreground">{tenant?.slug ?? '—'}</p>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold tracking-tight">{tenant?.name ?? 'Workspace'}</p>
+        <p className="truncate text-xs text-muted-foreground">{tenant?.slug ?? '—'}</p>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger render={
-          <Button variant="ghost" className="h-10 gap-2 rounded-full px-2">
+          <Button variant="ghost" className="h-11 gap-2.5 rounded-full px-2 hover:bg-muted" aria-label="Account menu">
             <Avatar className="h-8 w-8 ring-1 ring-border">
               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">{initials}</AvatarFallback>
             </Avatar>
-            <span className="hidden text-sm font-medium sm:inline">{user?.email}</span>
+            <span className="hidden max-w-[180px] flex-col items-start leading-tight sm:flex">
+              <span className="truncate text-sm font-medium">{user?.email}</span>
+              <span className="text-[11px] text-muted-foreground">{roleLabel(user?.role)}</span>
+            </span>
           </Button>
         } />
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => void logout()}>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel className="flex items-center gap-2.5 px-2 py-2">
+            <Avatar className="h-9 w-9 ring-1 ring-border">
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">{user?.email}</p>
+              <p className="truncate text-xs font-normal capitalize text-muted-foreground">
+                {roleLabel(user?.role)} · {tenant?.name ?? 'Workspace'}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={() => void logout()}>
             <LogOut className="mr-2 h-4 w-4" />
             Log out
           </DropdownMenuItem>
