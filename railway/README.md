@@ -1,10 +1,12 @@
 # Railway service matrix — project `steadfast-nature`
 
-| Service | Config | Dockerfile | Start command | Public URL |
-|---------|--------|------------|---------------|------------|
-| API | `railway.toml` | `Dockerfile` | uvicorn (auto) | Yes |
-| Worker | `railway.worker.toml` | `Dockerfile.worker` | celery worker (auto) | No |
+| Service | Name pattern | Dockerfile | Healthcheck | Public URL |
+|---------|--------------|------------|-------------|------------|
+| API | `superclaim-api` | `Dockerfile` | `/health` ON (Railway UI) | Yes |
+| Worker | `*worker*` in name | `Dockerfile` (same) | OFF | No |
 | Redis | (plugin) | — | — | No |
-| Dashboard | `dashboard/railway.toml` | Nixpacks | `npm start` | Yes |
+| Dashboard | `dashboard/` root | Nixpacks | `/` | Yes |
 
-Worker **must not** use HTTP healthcheck — Celery has no `/health` endpoint.
+Entrypoint `scripts/docker-entrypoint.sh` starts Celery when `RAILWAY_SERVICE_NAME` contains `worker`, otherwise uvicorn on `$PORT`.
+
+Worker **must not** use HTTP healthcheck.

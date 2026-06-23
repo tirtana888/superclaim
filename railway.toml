@@ -1,11 +1,9 @@
-# SuperClaim API service (create a second Railway service for Celery — see DEPLOY-RAILWAY.md)
+# Shared by API + worker. Entrypoint picks role via RAILWAY_SERVICE_NAME (name must contain "worker").
+# Healthcheck /health: enable ONLY on API service in Railway dashboard (not worker).
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
-healthcheckPath = "/health"
-healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5

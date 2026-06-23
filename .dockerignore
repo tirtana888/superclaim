@@ -12,5 +12,6 @@ node_modules/
 *.md
 !DEPLOY-RAILWAY.md
 tests/
-scripts/
+scripts/*
+!scripts/docker-entrypoint.sh
 alembic/versions/__pycache__/
