@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +20,7 @@ class Settings(BaseSettings):
     supabase_storage_bucket: str = "claim-media"
 
     redis_url: str = "redis://localhost:6379/0"
+    redis_private_url: str = ""
 
     secret_key: str = "change-me-in-production"
     api_key_header: str = "X-API-Key"
@@ -32,6 +34,24 @@ class Settings(BaseSettings):
     mlflow_tracking_uri: str = "http://localhost:5000"
     fraud_model_path: str = "models/fraud_lgbm.txt"
     sentry_dsn: str = ""
+
+    @field_validator("redis_url", "redis_private_url")
+    @classmethod
+    def strip_redis(cls, value: str) -> str:
+        return value.strip()
+
+    @property
+    def celery_redis_url(self) -> str:
+        """Redis URL for Celery — prefer Railway private network URL when set."""
+        url = (self.redis_private_url or self.redis_url).strip()
+        if not url:
+            raise RuntimeError("REDIS_URL is not configured")
+        if not url.startswith(("redis://", "rediss://")):
+            raise RuntimeError(
+                "REDIS_URL must start with redis:// or rediss://. "
+                "Remove invalid CELERY_RESULT_BACKEND / CELERY_BROKER_URL from Railway Variables."
+            )
+        return url
 
 
 settings = Settings()

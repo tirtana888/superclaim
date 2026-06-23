@@ -103,6 +103,7 @@ Buka tab **Variables** pada service worker. Copy dari service API atau pakai **S
 | Variable | Sumber | Contoh |
 |----------|--------|--------|
 | `REDIS_URL` | Reference Redis service | `${{Redis.REDIS_URL}}` |
+| `REDIS_PRIVATE_URL` | *(opsional, direkomendasikan)* | `${{Redis.REDIS_PRIVATE_URL}}` |
 | `SUPABASE_DB_URL` | Supabase → Database → URI | `postgresql+asyncpg://postgres:...@db.xxx.supabase.co:5432/postgres` |
 | `SUPABASE_URL` | Supabase → Settings → API | `https://xxx.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → service_role key | `eyJ...` |
@@ -117,7 +118,10 @@ Di Variables worker, tambah:
 
 ```
 REDIS_URL=${{Redis.REDIS_URL}}
+REDIS_PRIVATE_URL=${{Redis.REDIS_PRIVATE_URL}}
 ```
+
+> **Hapus** variable `CELERY_RESULT_BACKEND` dan `CELERY_BROKER_URL` jika ada di Railway — nilai salah menyebabkan crash `No module named 'reseau'`.
 
 Ganti `Redis` dengan nama service Redis Anda di Railway jika berbeda.
 
@@ -226,7 +230,7 @@ Project: steadfast-nature
 | Log: `Starting API on port...` di worker | Nama service tidak mengandung `worker` | Rename ke `superclaim-worker` atau set `SUPERCLAIM_ROLE=worker` |
 | `CELERY_UNAVAILABLE` | Worker mati atau Redis salah | Cek `REDIS_URL`, redeploy worker |
 | Klaim stuck `processing` | Worker tidak consume queue | Cek log worker, pastikan Redis sama dengan API |
-| `Connection refused` Redis | Redis belum jalan | Start service Redis, link `REDIS_URL` |
+| `ModuleNotFoundError: reseau` | `CELERY_RESULT_BACKEND` salah di Railway | Hapus `CELERY_*` vars, pakai hanya `REDIS_URL` |
 | DB error di worker | `SUPABASE_DB_URL` salah | Pastikan format `postgresql+asyncpg://`, password URL-encoded |
 | `AUTH_FAILED` saat proses | `SECRET_KEY` beda dengan API | Samakan `SECRET_KEY` di API + worker |
 
