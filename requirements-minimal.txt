@@ -1,0 +1,20 @@
+# Production / Railway (no mlflow). Fraud uses rule fallback when model file missing.
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]>=2.0
+asyncpg
+alembic
+pydantic>=2.0
+pydantic-settings
+supabase
+celery
+redis
+google-genai
+mistralai
+lightgbm
+imagehash
+Pillow
+rapidfuzz
+python-dotenv
+httpx
+sentry-sdk

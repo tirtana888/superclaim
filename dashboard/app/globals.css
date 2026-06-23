@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 9%;
+  --card-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 17%;
+  --primary: 142 76% 45%;
+  --primary-foreground: 144 100% 97%;
+  --destructive: 0 84% 60%;
+  --warning: 38 92% 50%;
+  --success: 142 76% 45%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.card {
+  @apply rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+.badge-approve {
+  @apply badge bg-emerald-500/15 text-emerald-400;
+}
+
+.badge-reject {
+  @apply badge bg-red-500/15 text-red-400;
+}
+
+.badge-review {
+  @apply badge bg-amber-500/15 text-amber-400;
+}
+
+.badge-processing {
+  @apply badge bg-blue-500/15 text-blue-400;
+}

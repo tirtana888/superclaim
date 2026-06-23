@@ -1,0 +1,10 @@
+# SuperClaim API service (create a second Railway service for Celery — see DEPLOY-RAILWAY.md)
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

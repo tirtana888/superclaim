@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+dashboard/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+*.md
+!DEPLOY-RAILWAY.md
+tests/
+scripts/
+alembic/versions/__pycache__/
