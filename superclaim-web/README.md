@@ -39,9 +39,9 @@ Create a new service pointing to `superclaim-web/` with:
 | F3 Dashboard shell | Done |
 | F4 Overview | Done |
 | F5 Claims list + detail | Done |
-| F6 Policy builder (full) | Partial — create + activate |
-| F7 Devices | List only |
-| F8 API keys | Done |
-| F9 Team + usage | Done |
-| F10 Hosted claim page | Pending |
-| F11 Marketing polish | Basic |
+| F6 Policy builder (full) | Done — edit rules, test panel, activate, new version |
+| F7 Devices | Done — add, bulk CSV, search, delete |
+| F8 API keys | Done — create, rotate, revoke |
+| F9 Team + usage | Done — invite, usage chart |
+| F10 Hosted claim page | Done — `/claim/[brandSlug]` |
+| F11 Marketing polish | Done — how-it-works, footer, CTA |

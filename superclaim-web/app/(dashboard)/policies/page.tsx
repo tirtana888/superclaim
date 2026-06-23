@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -107,6 +108,9 @@ export default function PoliciesPage() {
                 <td className="px-4 py-3">v{p.version}</td>
                 <td className="px-4 py-3"><Badge variant="secondary">{p.status}</Badge></td>
                 <td className="px-4 py-3">
+                  <Link href={`/policies/${p.id}`} className="mr-3 text-primary hover:underline">
+                    Edit
+                  </Link>
                   {p.status === 'draft' && (
                     <Button size="sm" variant="outline" onClick={() => void activate(p.id)}>Activate</Button>
                   )}

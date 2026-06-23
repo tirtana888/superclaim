@@ -14,9 +14,15 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <Link href="/login" className="text-muted-foreground hover:text-foreground">
             Sign in
           </Link>
+          <Link href="/signup" className="rounded-lg bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90">
+            Get started
+          </Link>
         </nav>
       </header>
       {children}
+      <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
+        © {new Date().getFullYear()} SuperClaim.ai
+      </footer>
     </div>
   );
 }

@@ -38,3 +38,7 @@ export async function POST(req: NextRequest, ctx: { params: { path: string[] } }
 export async function PATCH(req: NextRequest, ctx: { params: { path: string[] } }) {
   return proxy(req, ctx.params, 'PATCH');
 }
+
+export async function DELETE(req: NextRequest, ctx: { params: { path: string[] } }) {
+  return proxy(req, ctx.params, 'DELETE');
+}

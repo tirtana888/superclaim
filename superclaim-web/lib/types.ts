@@ -129,11 +129,24 @@ export interface TeamListResponse {
   total: number;
 }
 
-export interface UsageCurrent {
+export interface RuleOutcome {
+  rule_id: string;
+  passed: boolean;
+  reason: string;
+}
+
+export interface TeamInviteCreated extends User {
+  temporary_password: string;
+}
+
+export interface UsageRecord {
+  id: string;
+  tenant_id: string;
   period: string;
   claims_processed: number;
   ai_cost_total: number;
   billable_amount: number;
+  created_at?: string | null;
 }
 
 export interface ClaimSummary {
