@@ -1,3 +1,5 @@
+import type { AnalysisResult, ClaimRow } from '@/lib/types';
+
 function normalizeEngineUrl(raw: string): string {
   const trimmed = raw.trim().replace(/\/+$/, '');
   if (!trimmed) return 'http://localhost:8000';
@@ -135,24 +137,19 @@ export async function fetchClaimResultFromEngine(claimId: string) {
       message: extractErrorMessage(body, raw, res.status),
     };
   }
-  return { status: 'done' as const, analysis: body as Record<string, unknown> };
+  return { status: 'done' as const, analysis: body as AnalysisResult };
 }
 
 export function mergeEngineAnalysis(
-  claim: Record<string, unknown>,
-  analysis: Record<string, unknown>,
-): Record<string, unknown> {
-  const decision = String(analysis.decision ?? '');
-  const metadata =
-    claim.metadata && typeof claim.metadata === 'object'
-      ? { ...(claim.metadata as Record<string, unknown>) }
-      : {};
-
-  metadata.analysis_result = analysis;
-
+  claim: ClaimRow,
+  analysis: AnalysisResult,
+): ClaimRow {
   return {
     ...claim,
-    status: DECISION_STATUS[decision] ?? claim.status,
-    metadata,
+    status: DECISION_STATUS[analysis.decision] ?? claim.status,
+    metadata: {
+      ...claim.metadata,
+      analysis_result: analysis,
+    },
   };
 }

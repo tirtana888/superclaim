@@ -36,10 +36,7 @@ export async function GET(
     if (needsEngine) {
       const engine = await fetchClaimResultFromEngine(params.id);
       if (engine.status === 'done') {
-        claim = mergeEngineAnalysis(
-          claim as unknown as Record<string, unknown>,
-          engine.analysis,
-        ) as ClaimRow;
+        claim = mergeEngineAnalysis(claim, engine.analysis);
       }
     }
 
