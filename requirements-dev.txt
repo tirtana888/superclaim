@@ -1,0 +1,8 @@
+# Dev / CI tooling for SuperClaim backend (not needed at runtime).
+# Install: pip install -r requirements-dev.txt
+ruff>=0.6
+mypy>=1.11
+pip-audit>=2.7
+pytest>=8.0
+pytest-asyncio>=0.23
+pytest-cov>=5.0

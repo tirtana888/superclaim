@@ -26,6 +26,15 @@ class Settings(BaseSettings):
     api_key_header: str = "X-API-Key"
     tenant_id_header: str = "X-Tenant-ID"
 
+    # Control Plane JWT (dashboard users)
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 14
+
+    # Data Plane API credential headers (key id + secret)
+    api_key_id_header: str = "X-API-Key-Id"
+    api_secret_header: str = "X-API-Secret"
+
     gemini_api_key: str = ""
     gemini_vision_model: str = "gemini-3.5-flash"
     mistral_api_key: str = ""

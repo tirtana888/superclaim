@@ -44,10 +44,6 @@ async def test_run_claim_analysis_persists_decision() -> None:
         new_callable=AsyncMock,
         return_value=[(b"image-bytes", "tenant/CLM-PIPE-001/photo.jpg")],
     ), patch(
-        "app.services.claim_pipeline.create_signed_url",
-        new_callable=AsyncMock,
-        return_value="https://signed.example/photo.jpg",
-    ), patch(
         "app.services.claim_pipeline.analyze_duplicates_and_exif",
         new_callable=AsyncMock,
     ) as mock_duplicate, patch(

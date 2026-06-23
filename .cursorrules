@@ -1,0 +1,160 @@
+# SuperClaim.ai - Cursor Rules
+
+SuperClaim.ai is a multi-tenant B2B SaaS platform for AI-powered warranty claims
+processing for electronics and gadgets. Brands sign up, configure claim policies,
+manage a device registry, generate API keys, and use an isolated dashboard.
+
+## PLATFORM SHAPE
+Three planes share one tenant-isolated Postgres database:
+1. CONTROL PLANE (FastAPI): auth, tenant management, policy CRUD, device registry,
+   API key management. Accessed by brand users via JWT-authenticated dashboard.
+2. DATA PLANE (FastAPI + Celery): the claims engine. POST /v1/claims/analyze,
+   authenticated by API key id + secret (NOT JWT). Tenant is resolved FROM the key.
+3. BRAND DASHBOARD (Next.js 14 App Router): each brand's isolated workspace.
+
+## ABSOLUTE TENANCY RULE
+Every table has tenant_id (except `tenants`). EVERY query MUST be filtered by
+tenant_id via a FastAPI dependency layer. No endpoint may ever return cross-tenant
+data. For the Data Plane, resolve the tenant from the authenticated API key -
+NEVER trust a client-supplied X-Tenant-ID header. Cross-tenant isolation tests are
+mandatory: prove tenant A cannot access tenant B's data.
+
+## TECH STACK (DO NOT DEVIATE)
+- Backend: FastAPI (Python 3.11+), SQLAlchemy 2.0 async, Alembic
+- Database: Supabase managed Postgres via SUPABASE_DB_URL (use the IPv4 pooler host
+  on Railway; the direct db.<ref>.supabase.co host is IPv6-only). Treat as plain
+  Postgres; do NOT rely on Supabase RLS - tenancy is enforced in FastAPI.
+- Vector: pgvector on Supabase (duplicate detection phase 2)
+- Storage: Supabase Storage, PRIVATE bucket, path {tenant_id}/{claim_id}/{filename},
+  signed URLs
+- Queue: Celery + Redis
+- Vision AI: GPT-4o Vision (behind a provider abstraction)
+- OCR: Mistral Document AI behind an OCRProvider abstraction (OCR_PROVIDER env var)
+  so PaddleOCR can replace it later without touching other services
+- Fraud ML: LightGBM (rule-based fallback when model file is absent)
+- Duplicate: imagehash (pHash) phase 1
+- Dashboard: Next.js 14 + Tailwind + shadcn/ui
+- Auth (dashboard): JWT access + refresh tokens, Argon2 password hashing
+- Auth (Data Plane): API key (public key_id) + secret (Argon2-hashed, shown once)
+
+## DATA MODEL (core tables, all with tenant_id except tenants)
+tenants(id, name, slug, status, plan_tier)
+users(id, tenant_id, email, password_hash, role[owner|admin|reviewer], status)
+api_credentials(id, tenant_id, key_id, secret_hash, label, scopes[], status,
+  last_used_at, expires_at)
+policies(id, tenant_id, name, version, status[draft|active|archived], rules_json,
+  effective_from, created_by)
+devices(id, tenant_id, serial_number, device_category, device_model, purchase_date,
+  warranty_months, customer_ref, batch_id, source)
+claims(id, tenant_id, external_claim_id, device_id, policy_id, status, decision,
+  confidence_score, fraud_score, requires_review, payload_json, result_json,
+  ai_cost_usd)
+claim_events(id, tenant_id, claim_id, event_type, actor, detail_json)
+usage_records(id, tenant_id, period, claims_processed, ai_cost_total,
+  billable_amount)
+
+## POLICY ENGINE RULES (deterministic, NO AI/LLM)
+Stored as rules_json, edited via UI. Evaluable rules, each returns
+{ rule_id, passed, reason }:
+- warranty_active: purchase_date + warranty_months > claim_date
+- device_covered: device_category in covered_categories
+- damage_covered: damage_type not in exclusions
+- claim_limit: prior approved claims for serial < max_claims
+- cooling_period: claim_date - purchase_date > cooling_days
+- deductible: applied per claim if configured
+Policies are versioned; only one active version per policy. Log every rule fired.
+
+## CORE API CONTRACTS
+Data Plane (API key auth):
+  POST /v1/claims/analyze
+  Headers: X-API-Key-Id, X-API-Secret
+  Body: { external_claim_id, device_category, serial_number_input, purchase_date,
+    claim_date, damage_description, images[], policy_id?, metadata{} }
+  Response: ClaimAnalysisResult (see app/schemas/results.py)
+Control Plane (JWT auth): /api/auth/*, /api/policies*, /api/devices*,
+  /api/credentials*, /api/claims*, /api/team*, /api/usage
+
+## CODING STANDARDS
+- Pydantic v2 schemas; SQLAlchemy 2.0 async
+- Every service & endpoint has tests in /tests, including cross-tenant isolation tests
+- FastAPI Depends for: current_user (JWT), current_tenant_from_apikey (Data Plane),
+  require_role
+- Structured errors: { error_code, message, detail }
+- Env via pydantic-settings; never hardcode secrets
+- Secrets/passwords: Argon2. API secret shown once, stored hashed
+- Type hints everywhere; avoid Any unless unavoidable
+- All AI providers (vision, ocr) behind abstractions for later self-host swap
+
+## COMPATIBILITY & VALIDATION RULES (NEVER VIOLATE)
+
+### Single source of truth
+1. ALL shared data shapes live in app/schemas/ as Pydantic v2 models. No service
+   invents its own dict shape - it imports the canonical schema. If a field must
+   change, change it in app/schemas/ and update every consumer in the same session.
+2. ALL field names are snake_case everywhere (DB, Python, JSON API). Never camelCase
+   in backend. The Next.js dashboard maps to camelCase only at its own boundary.
+3. The canonical claim result schema is ClaimAnalysisResult in app/schemas/results.py.
+   Every service writes into a sub-part of it; decision_service reads the whole
+   thing. Do NOT create parallel/duplicate result shapes.
+
+### Shared dependencies (fixed names - do not rename)
+4. Auth dependencies have FIXED names (target home: app/core/security.py):
+   - get_current_user        -> JWT user (Control Plane)
+   - get_current_tenant      -> tenant from JWT user
+   - get_tenant_from_apikey  -> tenant from API key + secret (Data Plane)
+   - require_role(role)       -> role guard
+   Every endpoint imports these - never redefine or rename them.
+   NOTE (current state): the Data Plane today uses get_authenticated_context in
+   app/security.py with X-API-Key + X-Tenant-ID. The API key + secret model
+   (get_tenant_from_apikey) and app/core/ move are introduced in the auth session;
+   until then, do not invent a third auth path.
+5. The tenant-isolation query helper is tenant_query(model, tenant_id) (target home:
+   app/core/database.py). Every data access uses it once introduced. Never write a
+   raw query without tenant filtering.
+
+### Service interface contract
+6. Every *_service.py exposes ONE async entrypoint with a typed signature returning
+   a canonical schema from app/schemas/results.py:
+   - vision_service.analyze(image_url, device_category) -> VisionResult
+   - ocr_service.extract(image_url) -> OCRResult
+   - duplicate_service.check(tenant_id, claim_id, images) -> DuplicateResult
+   - policy_engine.evaluate(policy, claim) -> PolicyResult
+   - fraud_service.score(features) -> FraudResult
+   - decision_service.decide(...all results...) -> ClaimAnalysisResult
+   Signatures are FIXED - if you need more input, add an OPTIONAL field to the input
+   schema (ClaimInput / ClaimFeatures), do not change the signature.
+   NOTE (current state): existing services use legacy names (analyze_claim_image,
+   extract_serial_from_image, analyze_duplicates_and_exif, evaluate_policy,
+   score_fraud, build_decision) and legacy schemas (decision.py, vision.py, etc).
+   Migrate each service to its canonical entrypoint + results.py types in its
+   dedicated session; keep legacy functions until all callers move.
+
+### Before writing new code each session
+7. FIRST read app/schemas/results.py, app/security.py (and app/core/* once it
+   exists), and app/database.py to reuse existing names/shapes. Do NOT invent new
+   versions of things that already exist.
+8. After writing code, run python scripts/check_compat.py and fix every ERROR
+   (review WARNINGS) BEFORE considering the task done.
+
+### Versioning & migration safety
+9. Any DB model change requires a NEW Alembic migration in alembic/versions/ in the
+   same session. Never edit an existing migration that may have run. Never change a
+   column type without a migration.
+10. API responses are additive-only after v1 is set: you may ADD optional fields,
+    never remove or rename existing ones (the dashboard depends on them).
+
+## END-OF-SESSION CHECKLIST
+1. Confirm you used the canonical schemas in app/schemas/results.py (no duplicates).
+2. Confirm you used the fixed dependency names (current_user/tenant, apikey, role).
+3. Write/update unit tests for what you built, including a cross-tenant isolation test.
+4. Run: python scripts/check_compat.py  - fix all ERRORS, review WARNINGS.
+5. Run: pytest  - all tests must pass.
+6. Run: ruff check . && mypy app/  - fix type and lint issues.
+7. Summarize what changed and which schemas/dependencies you touched.
+
+## DEPLOY NOTES (Railway)
+- API service runs uvicorn; Worker service name must contain "worker" (auto-starts
+  Celery via scripts/docker-entrypoint.sh). Dashboard is the Next.js app in dashboard/.
+- REDIS_URL must be the Railway private Redis URL (never localhost in production).
+- SUPABASE_DB_URL must use the Supavisor pooler host (IPv4), user
+  postgres.<project_ref>; the direct host is IPv6-only and fails on Railway.

@@ -3,8 +3,10 @@ uvicorn[standard]
 sqlalchemy[asyncio]>=2.0
 asyncpg
 alembic
-pydantic>=2.0
+pydantic[email]>=2.0
 pydantic-settings
+argon2-cffi
+pyjwt
 supabase
 celery
 redis
