@@ -21,9 +21,9 @@ export function PolicyTestPanel({ config }: { config: PolicyConfig }) {
   const allPassed = rules.every((r) => r.passed);
 
   return (
-    <div className="space-y-4 rounded-xl border border-border p-5">
+    <div className="space-y-4 rounded-xl border border-border/60 bg-card p-5 shadow-sm">
       <div>
-        <h3 className="font-medium">Test policy</h3>
+        <h3 className="font-semibold tracking-tight">Test policy</h3>
         <p className="text-sm text-muted-foreground">Preview which rules pass for a sample claim</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -52,13 +52,15 @@ export function PolicyTestPanel({ config }: { config: PolicyConfig }) {
         Overall:{' '}
         <Badge variant={allPassed ? 'default' : 'destructive'}>{allPassed ? 'Would pass policy' : 'Would fail policy'}</Badge>
       </p>
-      <div className="space-y-2">
-        {rules.map((r) => (
-          <div key={r.rule_id} className="flex justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-            <span>{r.rule_id}</span>
-            <Badge variant={r.passed ? 'default' : 'destructive'}>{r.passed ? 'Pass' : 'Fail'}</Badge>
-          </div>
-        ))}
+      <div className="overflow-hidden rounded-lg border border-border/60">
+        <div className="divide-y divide-border/60">
+          {rules.map((r) => (
+            <div key={r.rule_id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-muted/30">
+              <span className="text-foreground">{r.rule_id}</span>
+              <Badge variant={r.passed ? 'default' : 'destructive'}>{r.passed ? 'Pass' : 'Fail'}</Badge>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -42,26 +42,35 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [router, setSession, setHydrated, clear]);
 
   if (!hydrated || !user || !tenant) {
-    return <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Loading workspace…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+          Loading workspace…
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <div className="hidden md:block">
+    <div className="flex min-h-screen bg-muted/30">
+      <div className="hidden border-r border-border/60 md:block">
         <DashboardSidebar />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2 md:hidden">
+        <div className="flex items-center gap-2 border-b border-border/60 bg-card px-4 py-2 md:hidden">
           <Sheet>
             <SheetTrigger render={<Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>} />
-            <SheetContent side="left" className="w-60 p-0">
+            <SheetContent side="left" className="w-64 p-0">
               <DashboardSidebar onNavigate={() => {}} />
             </SheetContent>
           </Sheet>
-          <span className="text-sm font-medium">{tenant.name}</span>
+          <span className="text-sm font-semibold tracking-tight">{tenant.name}</span>
         </div>
         <DashboardTopbar />
-        <main className="flex-1 p-6 md:p-8">{children}</main>
+        <main className="flex-1 p-6 md:p-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
+        </main>
       </div>
     </div>
   );

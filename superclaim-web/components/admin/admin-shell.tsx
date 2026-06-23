@@ -57,14 +57,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+    <div className="min-h-screen bg-muted/30">
+      <header className="border-b border-border/60 bg-background/80 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <Link href="/admin" className="text-lg font-semibold tracking-tight">
+            <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+                S
+              </span>
               SuperClaim
             </Link>
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
               Platform Admin
             </span>
           </div>

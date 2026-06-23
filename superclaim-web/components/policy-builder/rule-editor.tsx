@@ -13,8 +13,8 @@ export function RuleEditor({
   onChange: (config: PolicyConfig) => void;
 }) {
   return (
-    <div className="space-y-4 rounded-xl border border-border p-5">
-      <h3 className="font-medium">Policy rules</h3>
+    <div className="space-y-4 rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+      <h3 className="font-semibold tracking-tight">Policy rules</h3>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Warranty (months)</Label>

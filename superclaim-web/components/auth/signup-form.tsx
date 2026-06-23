@@ -60,9 +60,9 @@ export function SignupForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-border shadow-sm">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-semibold">Create workspace</CardTitle>
+    <Card className="w-full max-w-md shadow-floating">
+      <CardHeader className="space-y-1 pb-2">
+        <CardTitle className="text-2xl font-semibold tracking-tight">Create workspace</CardTitle>
         <CardDescription>Start processing warranty claims with AI</CardDescription>
       </CardHeader>
       <CardContent>

@@ -39,7 +39,7 @@ export default function ClaimsPage() {
       <div className="flex flex-wrap gap-3">
         <Input placeholder="Search claim or serial…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
         <select
-          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm"
+          className="h-9 rounded-lg border border-input bg-background px-3 text-sm shadow-xs-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -52,46 +52,46 @@ export default function ClaimsPage() {
 
       {error && <p className="text-sm text-destructive">{error.message}</p>}
 
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <table className="min-w-full text-sm">
-          <thead className="bg-muted/40">
+          <thead className="bg-muted/50">
             <tr>
               {['Claim ID', 'Category', 'Serial', 'Status', 'Decision', 'Fraud', ''].map((h) => (
-                <th key={h || 'action'} className="px-4 py-2 text-left font-medium text-muted-foreground">{h}</th>
+                <th key={h || 'action'} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/60">
             {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td colSpan={7} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td>
+                <tr key={i} className="transition-colors hover:bg-muted/30">
+                  <td colSpan={7} className="px-5 py-3.5"><Skeleton className="h-5 w-full" /></td>
                 </tr>
               ))}
             {rows.map((row) => {
               const analysis = row.metadata?.analysis_result as { decision?: string; fraud_score?: number } | undefined;
               return (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">{row.external_claim_id}</td>
-                  <td className="px-4 py-3">{row.device_category ?? '—'}</td>
-                  <td className="px-4 py-3">{row.serial_number_input ?? '—'}</td>
-                  <td className="px-4 py-3">{row.status}</td>
-                  <td className="px-4 py-3">
+                <tr key={row.id} className="transition-colors hover:bg-muted/30">
+                  <td className="px-5 py-3.5 font-medium">{row.external_claim_id}</td>
+                  <td className="px-5 py-3.5">{row.device_category ?? '—'}</td>
+                  <td className="px-5 py-3.5">{row.serial_number_input ?? '—'}</td>
+                  <td className="px-5 py-3.5">{row.status}</td>
+                  <td className="px-5 py-3.5">
                     {analysis?.decision ? (
                       <Badge variant={analysis.decision === 'APPROVE' ? 'default' : analysis.decision === 'REJECT' ? 'destructive' : 'secondary'}>
                         {analysis.decision}
                       </Badge>
                     ) : '—'}
                   </td>
-                  <td className="px-4 py-3">{analysis?.fraud_score?.toFixed(2) ?? '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">{analysis?.fraud_score?.toFixed(2) ?? '—'}</td>
+                  <td className="px-5 py-3.5">
                     <Link href={`/claims/${row.external_claim_id}`} className="text-primary hover:underline">View</Link>
                   </td>
                 </tr>
               );
             })}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No claims found</td></tr>
+              <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No claims found</td></tr>
             )}
           </tbody>
         </table>

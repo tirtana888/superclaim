@@ -28,18 +28,18 @@ export function DashboardTopbar() {
   const initials = (user?.email ?? 'U').slice(0, 2).toUpperCase();
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border px-6">
+    <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
       <div>
-        <p className="text-sm font-medium">{tenant?.name ?? 'Workspace'}</p>
+        <p className="text-sm font-semibold tracking-tight">{tenant?.name ?? 'Workspace'}</p>
         <p className="text-xs text-muted-foreground">{tenant?.slug ?? '—'}</p>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger render={
-          <Button variant="ghost" className="gap-2 px-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          <Button variant="ghost" className="h-10 gap-2 rounded-full px-2">
+            <Avatar className="h-8 w-8 ring-1 ring-border">
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">{initials}</AvatarFallback>
             </Avatar>
-            <span className="hidden text-sm sm:inline">{user?.email}</span>
+            <span className="hidden text-sm font-medium sm:inline">{user?.email}</span>
           </Button>
         } />
         <DropdownMenuContent align="end">

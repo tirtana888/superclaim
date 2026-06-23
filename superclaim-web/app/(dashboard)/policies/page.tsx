@@ -88,26 +88,26 @@ export default function PoliciesPage() {
         </Dialog>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <table className="min-w-full text-sm">
-          <thead className="bg-muted/40">
+          <thead className="bg-muted/50">
             <tr>
               {['Name', 'ID', 'Version', 'Status', ''].map((h) => (
-                <th key={h || 'a'} className="px-4 py-2 text-left font-medium text-muted-foreground">{h}</th>
+                <th key={h || 'a'} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/60">
             {isLoading && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={5} className="px-5 py-10 text-center text-muted-foreground">Loading…</td></tr>
             )}
             {rows.map((p) => (
-              <tr key={p.id} className="border-t border-border">
-                <td className="px-4 py-3 font-medium">{p.name}</td>
-                <td className="px-4 py-3">{p.external_policy_id}</td>
-                <td className="px-4 py-3">v{p.version}</td>
-                <td className="px-4 py-3"><Badge variant="secondary">{p.status}</Badge></td>
-                <td className="px-4 py-3">
+              <tr key={p.id} className="transition-colors hover:bg-muted/30">
+                <td className="px-5 py-3.5 font-medium">{p.name}</td>
+                <td className="px-5 py-3.5">{p.external_policy_id}</td>
+                <td className="px-5 py-3.5">v{p.version}</td>
+                <td className="px-5 py-3.5"><Badge variant="secondary">{p.status}</Badge></td>
+                <td className="px-5 py-3.5">
                   <Link href={`/policies/${p.id}`} className="mr-3 text-primary hover:underline">
                     Edit
                   </Link>
@@ -118,7 +118,7 @@ export default function PoliciesPage() {
               </tr>
             ))}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No policies yet</td></tr>
+              <tr><td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">No policies yet</td></tr>
             )}
           </tbody>
         </table>

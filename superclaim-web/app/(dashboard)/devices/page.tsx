@@ -127,25 +127,25 @@ export default function DevicesPage() {
 
       <Input placeholder="Search by serial…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
 
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <table className="min-w-full text-sm">
-          <thead className="bg-muted/40">
+          <thead className="bg-muted/50">
             <tr>
               {['Serial', 'Category', 'Model', 'Purchased', 'Source', ''].map((h) => (
-                <th key={h || 'a'} className="px-4 py-2 text-left font-medium text-muted-foreground">{h}</th>
+                <th key={h || 'a'} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>}
+          <tbody className="divide-y divide-border/60">
+            {isLoading && <tr><td colSpan={6} className="px-5 py-10 text-center text-muted-foreground">Loading…</td></tr>}
             {rows.map((d) => (
-              <tr key={d.id} className="border-t border-border">
-                <td className="px-4 py-3 font-medium">{d.serial_number}</td>
-                <td className="px-4 py-3">{d.device_category}</td>
-                <td className="px-4 py-3">{d.device_model ?? '—'}</td>
-                <td className="px-4 py-3">{d.purchase_date ?? '—'}</td>
-                <td className="px-4 py-3">{d.source}</td>
-                <td className="px-4 py-3">
+              <tr key={d.id} className="transition-colors hover:bg-muted/30">
+                <td className="px-5 py-3.5 font-medium">{d.serial_number}</td>
+                <td className="px-5 py-3.5">{d.device_category}</td>
+                <td className="px-5 py-3.5">{d.device_model ?? '—'}</td>
+                <td className="px-5 py-3.5">{d.purchase_date ?? '—'}</td>
+                <td className="px-5 py-3.5">{d.source}</td>
+                <td className="px-5 py-3.5">
                   <button type="button" className="text-destructive hover:underline" onClick={() => void removeDevice(d.id)}>
                     Delete
                   </button>
@@ -153,7 +153,7 @@ export default function DevicesPage() {
               </tr>
             ))}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No devices yet — add one or bulk import</td></tr>
+              <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No devices yet — add one or bulk import</td></tr>
             )}
           </tbody>
         </table>
