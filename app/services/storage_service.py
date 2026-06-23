@@ -38,13 +38,19 @@ def decode_image_content(content_base64: str) -> bytes:
 
 
 def _upload_bytes(path: str, content: bytes, content_type: str) -> None:
-    client = get_supabase_client()
-    bucket = get_storage_bucket_name()
-    client.storage.from_(bucket).upload(
-        path=path,
-        file=content,
-        file_options={"content-type": content_type, "upsert": "false"},
-    )
+    try:
+        client = get_supabase_client()
+        bucket = get_storage_bucket_name()
+        client.storage.from_(bucket).upload(
+            path=path,
+            file=content,
+            file_options={"content-type": content_type, "upsert": "false"},
+        )
+    except OSError as exc:
+        raise RuntimeError(
+            f"Supabase Storage unreachable ({exc}). "
+            "Check SUPABASE_URL and outbound network from Railway."
+        ) from exc
 
 
 def _create_signed_url(path: str, expires_in: int) -> str:

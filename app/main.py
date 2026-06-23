@@ -10,6 +10,7 @@ from app.api.v1.claim_results import router as claim_results_router
 from app.api.v1.claims import router as claims_router
 from app.celery_app import celery_app
 from app.config import settings
+from app.storage.supabase_client import check_storage_health
 
 
 @asynccontextmanager
@@ -89,6 +90,22 @@ async def celery_health() -> JSONResponse:
             content={
                 "status": "degraded",
                 "error_code": "CELERY_UNAVAILABLE",
+                "message": str(exc),
+            },
+        )
+
+
+@app.get("/health/storage")
+async def storage_health() -> JSONResponse:
+    try:
+        await check_storage_health()
+        return JSONResponse({"status": "ok", "storage": "ok"})
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "degraded",
+                "error_code": "STORAGE_UNAVAILABLE",
                 "message": str(exc),
             },
         )

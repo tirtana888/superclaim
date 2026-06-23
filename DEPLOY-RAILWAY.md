@@ -212,6 +212,8 @@ Total awal: **~$15–20/bulan** untuk staging trial.
 | Klaim stuck `processing` | Cek log worker di Railway |
 | DB connection error | Pastikan `SUPABASE_DB_URL` pakai `postgresql+asyncpg://` dan password URL-encoded |
 | Upload gagal | Cek `SUPABASE_SERVICE_ROLE_KEY` + bucket `claim-media` |
+| `[Errno 101] Network is unreachable` on submit | IPv6 route issue from Railway → redeploy API with latest code (forces IPv4). Test `GET /health/storage` |
+| `/health/storage` 503 | `SUPABASE_URL` / service role key salah, atau bucket tidak ada |
 
 ---
 

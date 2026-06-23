@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.config import settings
+from app.network import prefer_ipv4_dns
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -18,6 +19,8 @@ def get_engine() -> AsyncEngine:
     if _engine is None:
         if not settings.supabase_db_url:
             raise RuntimeError("SUPABASE_DB_URL is not configured")
+        if settings.app_env == "production":
+            prefer_ipv4_dns()
         _engine = create_async_engine(
             settings.supabase_db_url,
             echo=settings.debug,
