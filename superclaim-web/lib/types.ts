@@ -47,6 +47,34 @@ export interface MeResponse {
   tenant: Tenant | null;
 }
 
+export interface TenantAdmin {
+  id: string;
+  name: string;
+  slug: string | null;
+  status: string;
+  plan_tier: string;
+  is_active: boolean;
+  user_count: number;
+  claim_count: number;
+  created_at?: string | null;
+}
+
+export interface TenantUserAdmin {
+  id: string;
+  tenant_id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at?: string | null;
+}
+
+export interface PlatformStats {
+  tenant_count: number;
+  active_tenant_count: number;
+  user_count: number;
+  claim_count: number;
+}
+
 export interface PolicyConfig {
   warranty_months: number;
   covered_device_categories: string[];

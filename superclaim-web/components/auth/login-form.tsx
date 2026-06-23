@@ -45,7 +45,11 @@ export function LoginForm() {
       });
       const me = await bffRequest<MeResponse>('/api/session/me');
       setSession(me);
-      router.push(searchParams.get('next') || '/overview');
+      if (me.platform_admin && !me.user) {
+        router.push('/admin');
+      } else {
+        router.push(searchParams.get('next') || '/overview');
+      }
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Login failed');
