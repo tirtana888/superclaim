@@ -14,6 +14,8 @@ from app.core.security import (
     create_platform_access_token,
     create_platform_refresh_token,
     create_refresh_token,
+    create_sales_access_token,
+    create_sales_refresh_token,
     decode_token,
     get_current_tenant,
     get_current_user,
@@ -22,6 +24,7 @@ from app.core.security import (
 )
 from app.database import get_db
 from app.models.platform_admin import PlatformAdmin
+from app.models.sales_rep import SalesRep
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.admin import PlatformAdminOut
@@ -35,6 +38,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserOut,
 )
+from app.schemas.sales import SalesRepOut
 from app.schemas.team import AcceptInviteRequest
 from app.services import team_service
 
@@ -76,6 +80,13 @@ def _platform_tokens_for(admin: PlatformAdmin) -> TokenResponse:
     return TokenResponse(
         access_token=create_platform_access_token(admin_id=admin.id),
         refresh_token=create_platform_refresh_token(admin_id=admin.id),
+    )
+
+
+def _sales_tokens_for(sales_rep: SalesRep) -> TokenResponse:
+    return TokenResponse(
+        access_token=create_sales_access_token(sales_rep_id=sales_rep.id),
+        refresh_token=create_sales_refresh_token(sales_rep_id=sales_rep.id),
     )
 
 
@@ -138,6 +149,25 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)) -> Au
                 tokens=_platform_tokens_for(admin),
             )
 
+        sales_result = await db.execute(
+            select(SalesRep).where(
+                SalesRep.email == email,
+                SalesRep.status == "active",
+            )
+        )
+        sales_rep = sales_result.scalar_one_or_none()
+        if sales_rep is not None:
+            if not verify_password(payload.password, sales_rep.password_hash):
+                raise _error(
+                    "INVALID_CREDENTIALS",
+                    "Invalid email or password",
+                    status.HTTP_401_UNAUTHORIZED,
+                )
+            return AuthResponse(
+                sales_rep=SalesRepOut.model_validate(sales_rep),
+                tokens=_sales_tokens_for(sales_rep),
+            )
+
     stmt = select(User).where(User.email == email, User.status == "active")
     if payload.tenant_slug:
         stmt = stmt.join(Tenant, Tenant.id == User.tenant_id).where(
@@ -198,6 +228,22 @@ async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)) -
             )
         return _platform_tokens_for(admin)
 
+    if claims.get("sales"):
+        result = await db.execute(
+            select(SalesRep).where(
+                SalesRep.id == subject_id,
+                SalesRep.status == "active",
+            )
+        )
+        sales_rep = result.scalar_one_or_none()
+        if sales_rep is None:
+            raise _error(
+                "SALES_REP_NOT_FOUND",
+                "Sales rep no longer exists or is inactive",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+        return _sales_tokens_for(sales_rep)
+
     try:
         tenant_id = UUID(claims["tid"])
     except (KeyError, ValueError) as exc:
@@ -245,6 +291,18 @@ async def me(
         if admin is None:
             raise _error("ADMIN_NOT_FOUND", "Platform admin not found", status.HTTP_401_UNAUTHORIZED)
         return MeResponse(platform_admin=PlatformAdminOut.model_validate(admin))
+
+    if claims.get("sales"):
+        result = await db.execute(
+            select(SalesRep).where(
+                SalesRep.id == subject_id,
+                SalesRep.status == "active",
+            )
+        )
+        sales_rep = result.scalar_one_or_none()
+        if sales_rep is None:
+            raise _error("SALES_REP_NOT_FOUND", "Sales rep not found", status.HTTP_401_UNAUTHORIZED)
+        return MeResponse(sales_rep=SalesRepOut.model_validate(sales_rep))
 
     try:
         tenant_id = UUID(claims["tid"])

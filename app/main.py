@@ -17,6 +17,7 @@ from app.api.control import (
     usage_router,
 )
 from app.api.public import public_brands_router
+from app.api.sales import sales_router
 from app.api.v1.claim_results import router as claim_results_router
 from app.api.v1.claims import router as claims_router
 from app.celery_app import celery_app
@@ -54,6 +55,7 @@ app.include_router(team_router)
 app.include_router(claims_control_router)
 app.include_router(usage_router)
 app.include_router(admin_router)
+app.include_router(sales_router)
 app.include_router(public_brands_router)
 
 

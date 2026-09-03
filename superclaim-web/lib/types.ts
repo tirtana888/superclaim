@@ -28,6 +28,20 @@ export interface PlatformAdmin {
   created_at?: string | null;
 }
 
+export interface SalesRep {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  onboarding_bonus_override?: number | null;
+  revenue_rate_override?: number | null;
+  created_at?: string | null;
+}
+
+export interface SalesRepCreated extends SalesRep {
+  temporary_password: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   refresh_token: string;
@@ -37,6 +51,7 @@ export interface TokenResponse {
 export interface AuthResponse {
   user: User | null;
   platform_admin: PlatformAdmin | null;
+  sales_rep: SalesRep | null;
   tenant: Tenant | null;
   tokens: TokenResponse;
 }
@@ -44,7 +59,74 @@ export interface AuthResponse {
 export interface MeResponse {
   user: User | null;
   platform_admin: PlatformAdmin | null;
+  sales_rep: SalesRep | null;
   tenant: Tenant | null;
+}
+
+// ---- Sales dashboard ----
+
+export interface Dealer {
+  id: string;
+  name: string;
+  slug: string | null;
+  status: string;
+  plan_tier: string;
+  is_active: boolean;
+  onboarded_at?: string | null;
+  claims_processed_total: number;
+  last_claim_at?: string | null;
+  revenue_current_period: number;
+}
+
+export interface DealerListResponse {
+  dealers: Dealer[];
+}
+
+export interface RevenuePoint {
+  period: string;
+  claims_processed: number;
+  revenue: number;
+}
+
+export interface DealerDetail extends Dealer {
+  revenue_history: RevenuePoint[];
+}
+
+export interface DealerOnboardCreated {
+  tenant_id: string;
+  tenant_name: string;
+  slug: string | null;
+  owner_email: string;
+  temporary_password: string;
+  onboarding_bonus_awarded: number;
+}
+
+export interface DealerCommissionBreakdown {
+  tenant_id: string;
+  tenant_name: string;
+  claims_processed: number;
+  revenue: number;
+  revenue_commission: number;
+  onboarding_bonus: number;
+}
+
+export type CommissionRange = 'week' | 'month';
+
+export interface CommissionSummary {
+  range: CommissionRange;
+  period_start: string;
+  period_end: string;
+  total_revenue: number;
+  total_revenue_commission: number;
+  total_onboarding_bonus: number;
+  total_commission: number;
+  dealers: DealerCommissionBreakdown[];
+}
+
+export interface CommissionSettings {
+  default_onboarding_bonus: number;
+  default_revenue_rate: number;
+  updated_at?: string | null;
 }
 
 export interface TenantAdmin {

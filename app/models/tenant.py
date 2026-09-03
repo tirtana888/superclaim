@@ -1,6 +1,6 @@
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,6 +21,17 @@ class Tenant(Base, TimestampMixin):
     plan_tier: Mapped[str] = mapped_column(String(50), default="trial", nullable=False)
     api_key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    onboarded_by_sales_rep_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("sales_reps.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    onboarded_by: Mapped["SalesRep | None"] = relationship(
+        "SalesRep",
+        back_populates="dealers",
+    )
 
     claims: Mapped[list["Claim"]] = relationship(
         "Claim",

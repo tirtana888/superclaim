@@ -1,16 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { bffRequest } from '@/lib/api';
 import type { MeResponse } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
+
+const NAV = [
+  { href: '/admin', label: 'Overview' },
+  { href: '/admin/sales', label: 'Sales' },
+];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { platformAdmin, hydrated, setSession, setHydrated, clear } = useAuthStore();
 
   useEffect(() => {
@@ -20,7 +27,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         const me = await bffRequest<MeResponse>('/api/session/me');
         if (cancelled) return;
         if (!me.platform_admin) {
-          router.replace('/overview');
+          router.replace(me.sales_rep ? '/sales' : '/overview');
           return;
         }
         setSession(me);
@@ -70,6 +77,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
               Platform Admin
             </span>
+            <nav className="hidden items-center gap-1 sm:flex">
+              {NAV.map((item) => {
+                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                      active ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-muted-foreground sm:inline">{platformAdmin.email}</span>

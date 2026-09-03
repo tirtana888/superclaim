@@ -49,6 +49,8 @@ export function LoginForm() {
       setSession(me);
       if (me.platform_admin && !me.user) {
         router.push('/admin');
+      } else if (me.sales_rep && !me.user) {
+        router.push('/sales');
       } else {
         router.push(searchParams.get('next') || '/overview');
       }
