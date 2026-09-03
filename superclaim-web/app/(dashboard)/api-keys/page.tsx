@@ -7,6 +7,7 @@ import { KeyRound, TriangleAlert } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bffRequest } from '@/lib/api';
@@ -138,7 +139,16 @@ export default function ApiKeysPage() {
               </tr>
             ))}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No API keys yet</td></tr>
+              <tr>
+                <td colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={KeyRound}
+                    title="No API keys yet"
+                    description="Create a key to authenticate requests to the SuperClaim engine with the X-API-Key-Id and X-API-Secret headers."
+                    action={<Button size="sm" onClick={() => setOpen(true)}>Create key</Button>}
+                  />
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

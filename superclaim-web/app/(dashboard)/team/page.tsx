@@ -1,16 +1,23 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, UserPlus } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsIndicator, TabsList, TabsTab } from '@/components/ui/tabs';
 import { bffRequest } from '@/lib/api';
 import type { TeamInviteCreated, TeamListResponse } from '@/lib/types';
+
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default function TeamPage() {
   const qc = useQueryClient();
@@ -22,6 +29,7 @@ export default function TeamPage() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin' | 'reviewer'>('reviewer');
   const [inviteResult, setInviteResult] = useState<TeamInviteCreated | null>(null);
+  const [roleFilter, setRoleFilter] = useState('all');
 
   async function invite() {
     try {
@@ -39,7 +47,15 @@ export default function TeamPage() {
     }
   }
 
-  const rows = data?.members ?? [];
+  const roleTabs = useMemo(() => {
+    const roles = Array.from(new Set((data?.members ?? []).map((m) => m.role).filter(Boolean)));
+    return ['all', ...roles];
+  }, [data]);
+
+  const rows = useMemo(() => {
+    const all = data?.members ?? [];
+    return roleFilter === 'all' ? all : all.filter((m) => m.role === roleFilter);
+  }, [data, roleFilter]);
 
   return (
     <div className="space-y-6">
@@ -93,6 +109,19 @@ export default function TeamPage() {
         </div>
       )}
 
+      {roleTabs.length > 1 && (
+        <Tabs value={roleFilter} onValueChange={(v) => setRoleFilter(String(v))}>
+          <TabsList>
+            {roleTabs.map((r) => (
+              <TabsTab key={r} value={r}>
+                {r === 'all' ? 'All' : titleCase(r)}
+              </TabsTab>
+            ))}
+            <TabsIndicator />
+          </TabsList>
+        </Tabs>
+      )}
+
       <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <table className="min-w-full text-sm">
           <thead className="bg-muted/50">
@@ -106,11 +135,37 @@ export default function TeamPage() {
             {isLoading && <tr><td colSpan={3} className="px-5 py-10 text-center text-muted-foreground">Loading…</td></tr>}
             {rows.map((m) => (
               <tr key={m.id} className="transition-colors hover:bg-muted/30">
-                <td className="px-5 py-3.5">{m.email}</td>
-                <td className="px-5 py-3.5">{m.role}</td>
-                <td className="px-5 py-3.5">{m.status}</td>
+                <td className="px-5 py-3.5 font-medium">{m.email}</td>
+                <td className="px-5 py-3.5">
+                  <Badge variant="secondary" className="capitalize">{m.role}</Badge>
+                </td>
+                <td className="px-5 py-3.5">
+                  <Badge variant={m.status === 'active' ? 'default' : 'secondary'} className="capitalize">{m.status}</Badge>
+                </td>
               </tr>
             ))}
+            {!isLoading && rows.length === 0 && (
+              <tr>
+                <td colSpan={3} className="p-0">
+                  <EmptyState
+                    icon={UserPlus}
+                    title={roleFilter !== 'all' ? 'No members with this role' : 'No team members yet'}
+                    description={
+                      roleFilter !== 'all'
+                        ? 'Switch tabs to see other members, or invite someone new.'
+                        : 'Invite teammates to review and manage warranty claims together.'
+                    }
+                    action={
+                      roleFilter !== 'all' ? (
+                        <Button variant="outline" size="sm" onClick={() => setRoleFilter('all')}>Show all</Button>
+                      ) : (
+                        <Button size="sm" onClick={() => setOpen(true)}>Invite member</Button>
+                      )
+                    }
+                  />
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 
+import { Inbox } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsIndicator, TabsList, TabsTab } from '@/components/ui/tabs';
@@ -99,7 +103,26 @@ export default function ClaimsPage() {
               );
             })}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No claims found</td></tr>
+              <tr>
+                <td colSpan={7} className="p-0">
+                  <EmptyState
+                    icon={Inbox}
+                    title={search || statusFilter !== 'all' ? 'No claims match your filters' : 'No claims yet'}
+                    description={
+                      search || statusFilter !== 'all'
+                        ? 'Try a different search term or status tab.'
+                        : 'Claims submitted through your integration or hosted claim page will appear here.'
+                    }
+                    action={
+                      (search || statusFilter !== 'all') && (
+                        <Button variant="outline" size="sm" onClick={() => { setSearch(''); setStatusFilter('all'); }}>
+                          Clear filters
+                        </Button>
+                      )
+                    }
+                  />
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
