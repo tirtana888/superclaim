@@ -25,6 +25,7 @@ from app.config import settings
 from app.database import get_db
 from app.models.api_credential import ApiCredential
 from app.models.platform_admin import PlatformAdmin
+from app.models.sales_rep import SalesRep
 from app.models.tenant import Tenant
 from app.models.user import User
 
@@ -90,6 +91,7 @@ def _create_token(
     token_type: TokenType,
     expires_delta: timedelta,
     is_platform_admin: bool = False,
+    is_sales_rep: bool = False,
 ) -> str:
     now = datetime.now(UTC)
     payload: dict[str, str | int | bool] = {
@@ -101,6 +103,8 @@ def _create_token(
     }
     if is_platform_admin:
         payload["plat"] = True
+    elif is_sales_rep:
+        payload["sales"] = True
     elif tenant_id is not None:
         payload["tid"] = str(tenant_id)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
@@ -145,6 +149,28 @@ def create_platform_refresh_token(*, admin_id: UUID) -> str:
         token_type="refresh",
         expires_delta=timedelta(days=settings.refresh_token_expire_days),
         is_platform_admin=True,
+    )
+
+
+def create_sales_access_token(*, sales_rep_id: UUID) -> str:
+    return _create_token(
+        user_id=sales_rep_id,
+        tenant_id=None,
+        role="sales",
+        token_type="access",
+        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
+        is_sales_rep=True,
+    )
+
+
+def create_sales_refresh_token(*, sales_rep_id: UUID) -> str:
+    return _create_token(
+        user_id=sales_rep_id,
+        tenant_id=None,
+        role="sales",
+        token_type="refresh",
+        expires_delta=timedelta(days=settings.refresh_token_expire_days),
+        is_sales_rep=True,
     )
 
 
@@ -272,6 +298,35 @@ async def get_current_platform_admin(
 
 
 require_platform_admin = get_current_platform_admin
+
+
+async def get_current_sales_rep(
+    authorization: str = Header(..., alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> SalesRep:
+    """JWT dependency for internal sales staff (Control Plane /sales routes)."""
+    token = _bearer_token(authorization)
+    payload = decode_token(token, expected_type="access")
+    if not payload.get("sales"):
+        raise _forbidden("Sales access required")
+    try:
+        sales_rep_id = UUID(payload["sub"])
+    except (KeyError, ValueError) as exc:
+        raise _auth_error("INVALID_TOKEN", "Malformed token claims") from exc
+
+    result = await db.execute(
+        select(SalesRep).where(
+            SalesRep.id == sales_rep_id,
+            SalesRep.status == "active",
+        )
+    )
+    sales_rep = result.scalar_one_or_none()
+    if sales_rep is None:
+        raise _auth_error("SALES_REP_NOT_FOUND", "Sales rep no longer exists or is inactive")
+    return sales_rep
+
+
+require_sales_rep = get_current_sales_rep
 
 
 # ---------------------------------------------------------------------------

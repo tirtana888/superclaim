@@ -26,6 +26,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           router.replace('/login');
           return;
         }
+        if (me.sales_rep && !me.user) {
+          router.replace('/sales');
+          return;
+        }
         setSession(me);
       } catch {
         if (!cancelled) {

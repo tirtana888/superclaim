@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.admin import PlatformAdminOut
+from app.schemas.sales import SalesRepOut
 
 
 class SignupRequest(BaseModel):
@@ -62,6 +63,7 @@ class TenantOut(BaseModel):
 class AuthResponse(BaseModel):
     user: UserOut | None = None
     platform_admin: PlatformAdminOut | None = None
+    sales_rep: SalesRepOut | None = None
     tenant: TenantOut | None = None
     tokens: TokenResponse
 
@@ -69,4 +71,5 @@ class AuthResponse(BaseModel):
 class MeResponse(BaseModel):
     user: UserOut | None = None
     platform_admin: PlatformAdminOut | None = None
+    sales_rep: SalesRepOut | None = None
     tenant: TenantOut | None = None
