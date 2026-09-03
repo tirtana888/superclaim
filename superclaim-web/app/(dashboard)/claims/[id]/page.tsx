@@ -2,21 +2,61 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { ArrowLeft, Gauge, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Gauge, Loader2, RefreshCw, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { bffRequest } from '@/lib/api';
 import type { ClaimDecisionResult } from '@/lib/types';
 
 export default function ClaimDetailPage({ params }: { params: { id: string } }) {
-  const { data, isLoading, error } = useQuery({
+  const { data, error, failureCount, refetch } = useQuery({
     queryKey: ['claim', params.id],
     queryFn: () => bffRequest<ClaimDecisionResult>(`/api/control/claims/${encodeURIComponent(params.id)}`),
+    // Poll every 4s while the decision isn't ready yet; stop once it arrives.
+    refetchInterval: (query) => (query.state.data ? false : 4000),
+    retry: 1,
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading claim…</p>;
-  if (error) return <p className="text-sm text-destructive">{error.message}</p>;
-  if (!data) return <p className="text-sm text-destructive">Claim not found</p>;
+  // No result yet — the claim is still moving through the AI pipeline.
+  if (!data) {
+    const stalled = failureCount > 5;
+    return (
+      <div className="mx-auto max-w-4xl space-y-6">
+        <Link href="/claims" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to claims
+        </Link>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-border/60 bg-card px-6 py-16 text-center shadow-sm">
+          <div className="relative mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            <h1 className="text-lg font-semibold tracking-tight">Analyzing claim…</h1>
+          </div>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            {stalled
+              ? 'This is taking longer than usual. The claim may still be processing, or the reference may be invalid.'
+              : 'Our AI is running vision, OCR, policy and fraud checks. This page updates automatically when the decision is ready.'}
+          </p>
+          <p className="mt-4 font-mono text-xs text-muted-foreground">{params.id}</p>
+          {stalled && (
+            <div className="mt-5 flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => void refetch()}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry now
+              </Button>
+            </div>
+          )}
+          {stalled && error && (
+            <p className="mt-3 text-xs text-destructive">{error.message}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const rules = (data.policy_result?.rules as { rule_id: string; passed: boolean; reason: string }[] | undefined) ?? [];
 

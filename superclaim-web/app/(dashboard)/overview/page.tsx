@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { CircleDollarSign, FileSearch, ListChecks, ShieldCheck } from 'lucide-react';
+import { CircleDollarSign, FileSearch, Inbox, ListChecks, ShieldCheck } from 'lucide-react';
 
 import { StatCard, StatCardSkeleton } from '@/components/dashboard/stat-card';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useClaims, useUsage } from '@/hooks/use-claims';
 
 export default function OverviewPage() {
@@ -91,8 +92,12 @@ export default function OverviewPage() {
               );})}
               {!claims.isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
-                    No claims yet. Submit one from your integration or hosted claim page.
+                  <td colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={Inbox}
+                      title="No claims yet"
+                      description="Submit a claim from your integration or hosted claim page to see activity here."
+                    />
                   </td>
                 </tr>
               )}

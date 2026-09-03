@@ -3,17 +3,25 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { PackageOpen } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsIndicator, TabsList, TabsTab } from '@/components/ui/tabs';
 import { bffRequest } from '@/lib/api';
 import type { DeviceListResponse } from '@/lib/types';
+
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default function DevicesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [open, setOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [serial, setSerial] = useState('');
@@ -25,12 +33,20 @@ export default function DevicesPage() {
     queryFn: () => bffRequest<DeviceListResponse>('/api/control/devices'),
   });
 
+  const sourceTabs = useMemo(() => {
+    const sources = Array.from(new Set((data?.devices ?? []).map((d) => d.source).filter(Boolean)));
+    return ['all', ...sources];
+  }, [data]);
+
   const rows = useMemo(() => {
-    const all = data?.devices ?? [];
-    if (!search.trim()) return all;
-    const q = search.toLowerCase();
-    return all.filter((d) => d.serial_number.toLowerCase().includes(q));
-  }, [data, search]);
+    let all = data?.devices ?? [];
+    if (sourceFilter !== 'all') all = all.filter((d) => d.source === sourceFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      all = all.filter((d) => d.serial_number.toLowerCase().includes(q));
+    }
+    return all;
+  }, [data, search, sourceFilter]);
 
   async function addDevice() {
     try {
@@ -125,7 +141,23 @@ export default function DevicesPage() {
         </div>
       </div>
 
-      <Input placeholder="Search by serial…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {sourceTabs.length > 1 ? (
+          <Tabs value={sourceFilter} onValueChange={(v) => setSourceFilter(String(v))}>
+            <TabsList>
+              {sourceTabs.map((s) => (
+                <TabsTab key={s} value={s}>
+                  {s === 'all' ? 'All' : titleCase(s)}
+                </TabsTab>
+              ))}
+              <TabsIndicator />
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span />
+        )}
+        <Input placeholder="Search by serial…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+      </div>
 
       <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <table className="min-w-full text-sm">
@@ -153,7 +185,31 @@ export default function DevicesPage() {
               </tr>
             ))}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No devices yet — add one or bulk import</td></tr>
+              <tr>
+                <td colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={PackageOpen}
+                    title={search || sourceFilter !== 'all' ? 'No devices match your filters' : 'No devices yet'}
+                    description={
+                      search || sourceFilter !== 'all'
+                        ? 'Try a different search term or source filter.'
+                        : 'Register devices to enable warranty lookup during claim analysis.'
+                    }
+                    action={
+                      search || sourceFilter !== 'all' ? (
+                        <Button variant="outline" size="sm" onClick={() => { setSearch(''); setSourceFilter('all'); }}>
+                          Clear filters
+                        </Button>
+                      ) : (
+                        <>
+                          <Button size="sm" onClick={() => setOpen(true)}>Add device</Button>
+                          <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>Bulk import</Button>
+                        </>
+                      )
+                    }
+                  />
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
